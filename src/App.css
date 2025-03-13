@@ -1,0 +1,78 @@
+#root {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 2rem !important ; 
+}
+
+.logo {
+  height: 6em;
+  padding: 1.5em;
+  will-change: filter;
+  transition: filter 300ms;
+}
+.logo:hover {
+  filter: drop-shadow(0 0 2em #646cffaa);
+}
+.logo.react:hover {
+  filter: drop-shadow(0 0 2em #61dafbaa);
+}
+
+@keyframes logo-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  a:nth-of-type(2) .logo {
+    animation: logo-spin infinite 20s linear;
+  }
+}
+
+.card {
+  padding: 2em;
+}
+
+.read-the-docs {
+  color: #89898988;
+}
+
+
+.top-row {
+  display: flex;
+  justify-content: space-between; /* Alinha um item à esquerda e outro à direita */
+  width: 100%;
+  gap: 20px;
+}
+
+.left {
+
+  flex: 1; /* Ocupa metade da largura disponível */
+  display: flex;
+  justify-content: flex-start; /* Mantém GaugeDashboard à esquerda */
+  align-items: flex-start;
+
+}
+
+.right {
+  flex: 1; /* Ocupa metade da largura disponível */
+  display: flex;
+  justify-content: flex-end; /* Mantém MyLineChart à direita */
+}
+
+.bottom-row {
+  display: flex;
+  justify-content: flex-start; /* Centraliza LiveCam abaixo */
+  width: 100%;
+  margin-top: 20px;
+}
+
+
+.main-content {
+  flex-grow: 1; /* Ocupa todo o espaço disponível abaixo do navbar */
+  border: 1px solid #959595 !important;
+  padding: 20px; /* Para não grudar no conteúdo */
+}

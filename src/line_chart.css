@@ -1,0 +1,18 @@
+.line_container { 
+    width: 700px;
+    margin-top: 0px; /* Adds vertical space between the line and the gauge */
+    border: 1px solid #959595;
+    padding: 0;
+  }  
+  .title-container {
+    background-color: #3E98C780;
+    padding: 0px;
+    border-radius: 0px;
+  }
+  
+  .row_line_chart{
+    border: 0px solid #959595;
+    height: 400px;
+    width: 100%;
+  }
+ 

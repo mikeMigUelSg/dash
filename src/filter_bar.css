@@ -1,0 +1,86 @@
+.filter-bar {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    background-color: #90b0eb;
+    padding: 10px;
+    border-radius: 2px;
+    margin-bottom: 15px;
+    justify-content: space-between;
+
+  }
+  
+  .filter-bar select,
+  .filter-bar input {
+    padding: 8px 12px;
+    border: 1px solid #ccc;
+    border-radius: 7px;
+    background-color: white;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease-in-out;
+    appearance: none; /* Removes default dropdown styling */
+    position: relative;
+  }
+
+  .filter-bar select {
+    background: white url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="gray"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>') no-repeat right 10px center;
+    background-size: 12px;
+    padding-right: 30px;
+  }
+
+  /* On hover & focus */
+  .filter-bar input:hover,
+  .filter-bar select:hover,
+  .date-range input:hover {
+    border-color: #007bff;
+  }
+
+  .filter-bar input:focus,
+  .filter-bar select:focus,
+  .date-range input:focus {
+    outline: none;
+    border-color: #0056b3;
+    box-shadow: 0px 0px 5px rgba(0, 91, 187, 0.3);
+  }
+  
+  .date-filter {
+    display: flex;
+    gap: 5px;
+    align-items: center;
+  }
+  .date-range {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .date-range input {
+    padding: 6px 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 14px;
+    cursor: pointer;
+    margin-right: 20px;
+  }
+
+  /* Custom spacing between labels and inputs */
+.filter-item label,
+.date-range label {
+
+  margin-right: 5px;
+}
+
+/* Apply Button */
+.apply-button {
+  background-color: #3c668f;
+  color: white;
+  border: none;
+  padding: 10px 16px;
+  border-radius: 5px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.apply-button:hover {
+  background-color: #dfdfdf;
+}

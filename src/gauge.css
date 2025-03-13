@@ -1,0 +1,63 @@
+.gauge_temp_container{
+     /* Fixed height */
+    display: flex;
+    width: 100%;
+    flex-direction: column; /* Ensures stacking order */
+    justify-content: top;
+    align-items: flex-start;
+    border: 1px solid #959595; /* Optional: Adds a border for visualization */
+    margin: auto; /* Centers the container horizontally */
+    padding: 0;
+    margin-top: 0; /* Ensure it starts at the top */
+  }
+
+  
+  .gauge-wrapper {
+    width: 245px;
+    height: 265px;
+    margin-top: 2px; /* Adds vertical space between the line and the gauge */
+
+  
+
+    display: flex;
+    justify-content: center; /* Centers horizontally */
+    align-items: center; /* Centers vertically */
+  }
+  
+  
+  
+  .title-container {
+    background-color: #3E98C780;
+    padding: 10px;
+    border-radius: 2px;
+    display: flex;
+    align-items: center; /* Garante alinhamento vertical */
+    justify-content: space-between; /* Distribui os elementos */
+    width: 100%;
+  }
+
+  .temp_gauge_inst {
+    font-family: 'Poppins', sans-serif; /* Fonte moderna e elegante */
+    font-weight: 200 !important; /* Peso médio-forte para destaque */
+    font-size: 1.5rem; /* Tamanho adequado para legibilidade */
+    color: #000000; /* Cor branca para contraste */ /* Fundo azul para destaque */
+    text-align: center; /* Centraliza o texto */
+    padding: 5px 5px; /* Espaçamento interno para melhor aparência */
+    border-radius: 8px; /* Bordas arredondadas para um efeito suave */
+    width: 100%; /* Ocupa toda a largura do container pai */
+  }
+
+  .state-indicator {
+      display: flex;
+      align-items: center;
+      font-size: 18px;
+      font-weight: bold;
+      margin-right:10px
+  }
+  
+  .state-indicator div {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      margin-right: 8px;
+  }
