@@ -2,12 +2,12 @@ import "./filter_bar.css";
 import axios from "axios";
 import React, { useState } from "react";
 
-const FilterBar = ({setTemps}) => {
+const FilterBar = ({setTemps , setTemps2}) => {
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
 
 
-  const API_URL = "http://localhost:3001/api/histTemp";
+  const API_URL = "http://localhost:3001/api/histTemp1";
   console.log("FilterBar component rendered");
 
   const handleApply = async () => {
@@ -15,8 +15,8 @@ const FilterBar = ({setTemps}) => {
     try {     
       console.log("Start_date client: ", startDate)
       const response = await axios.get(API_URL, { params: { beg: startDate, end: endDate } });
-      console.log("Values: ", response.data)
       setTemps(response.data.value);
+      setTemps2(response.data.value2);
     } catch (error) {
       console.error("Erro ao buscar valor:", error);
     } 
@@ -37,7 +37,7 @@ const FilterBar = ({setTemps}) => {
 
       {/* Variable Picker */}
       <div className="filter-item">
-        <label>Variável:</label>
+        <label>Variable:</label>
         <select>
           <option>Temperature</option>
           <option>Temperature 2</option>
@@ -46,13 +46,13 @@ const FilterBar = ({setTemps}) => {
 
       {/* Date Range Picker */}
       <div className="date-range">
-        <label>Início:</label>
+        <label>Begning:</label>
         <input
           type="date"
           value={startDate}
           onChange={(e) => setStartDate(e.target.value)}
         />
-        <label>Fim:</label>
+        <label>End:</label>
         <input
           type="date"
           value={endDate}

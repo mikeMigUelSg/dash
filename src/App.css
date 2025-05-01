@@ -65,6 +65,13 @@
 
 .bottom-row {
   display: flex;
+  justify-content: flex-start; 
+  width: 100%;
+  margin-top: 0px;
+}
+
+.bottom-row-lc{
+  display: flex;
   justify-content: flex-start; /* Centraliza LiveCam abaixo */
   width: 100%;
   margin-top: 20px;
@@ -75,4 +82,18 @@
   flex-grow: 1; /* Ocupa todo o espaço disponível abaixo do navbar */
   border: 1px solid #959595 !important;
   padding: 20px; /* Para não grudar no conteúdo */
+}
+
+.temp1 {
+  border: 1px solid #959595 !important;
+  display: flex;
+  flex-direction: column; 
+  margin-bottom: 20px !important;
+  gap : 20px; 
+}
+
+.temp2 {
+  border: 1px solid #959595 !important;
+  display: flex;
+  flex-direction: column; 
 }

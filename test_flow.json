@@ -1,0 +1,314 @@
+[
+    {
+        "id": "start_config",
+        "type": "inject",
+        "z": "flow1",
+        "name": "Start Config",
+        "props": [
+            {
+                "p": "payload"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": true,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "1",
+        "payloadType": "str",
+        "x": 120,
+        "y": 80,
+        "wires": [
+            [
+                "get_config"
+            ]
+        ]
+    },
+    {
+        "id": "get_config",
+        "type": "mongodb4",
+        "z": "flow1",
+        "name": "Get Config",
+        "clientNode": "mongodb_client",
+        "mode": "collection",
+        "collection": "config",
+        "operation": "findOne",
+        "output": "toArray",
+        "maxTimeMS": "0",
+        "handleDocId": false,
+        "x": 300,
+        "y": 80,
+        "wires": [
+            [
+                "extract_config"
+            ]
+        ]
+    },
+    {
+        "id": "extract_config",
+        "type": "function",
+        "z": "flow1",
+        "name": "Extract Config",
+        "func": "const cfg = msg.payload;\n// Save sensor ranges\nglobal.set('min1', cfg.range['1'].Min);\nglobal.set('max1', cfg.range['1'].Max);\nglobal.set('min2', cfg.range['2'].Min);\nglobal.set('max2', cfg.range['2'].Max);\n// Save frequencies\nglobal.set('f1', cfg.frequency.temp1);\nglobal.set('f2', cfg.frequency.temp2);\n// Save statuses\nglobal.set('s1', cfg.status.temp1);\nglobal.set('s2', cfg.status.temp2);\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 520,
+        "y": 80,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "mqtt_freq",
+        "type": "mqtt in",
+        "z": "flow1",
+        "name": "Config Freq (both)",
+        "topic": "config/+/freq",
+        "qos": "2",
+        "datatype": "auto-detect",
+        "broker": "mqtt_broker",
+        "x": 120,
+        "y": 160,
+        "wires": [
+            [
+                "update_freq"
+            ]
+        ]
+    },
+    {
+        "id": "update_freq",
+        "type": "function",
+        "z": "flow1",
+        "name": "Update Frequency",
+        "func": "if(msg.topic.indexOf('temp1') !== -1) {\n    global.set('f1', msg.payload.frequency);\n} else if(msg.topic.indexOf('temp2') !== -1) {\n    global.set('f2', msg.payload.frequency);\n}\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 320,
+        "y": 160,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "mqtt_status",
+        "type": "mqtt in",
+        "z": "flow1",
+        "name": "Config Status (both)",
+        "topic": "config/+/status",
+        "qos": "2",
+        "datatype": "auto-detect",
+        "broker": "mqtt_broker",
+        "x": 120,
+        "y": 240,
+        "wires": [
+            [
+                "update_status"
+            ]
+        ]
+    },
+    {
+        "id": "update_status",
+        "type": "function",
+        "z": "flow1",
+        "name": "Update Status",
+        "func": "if(msg.topic.indexOf('temp1') !== -1) {\n    global.set('s1', msg.payload.status);\n} else if(msg.topic.indexOf('temp2') !== -1) {\n    global.set('s2', msg.payload.status);\n}\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 320,
+        "y": 240,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "sensor1",
+        "type": "revpi-getpin",
+        "z": "flow1",
+        "name": "Sensor 1",
+        "server": "revpi_server",
+        "getoverwritevalue": false,
+        "inputpin": "RTDValue_1",
+        "topic": "1",
+        "x": 120,
+        "y": 320,
+        "wires": [
+            [
+                "process_sensor"
+            ]
+        ]
+    },
+    {
+        "id": "sensor2",
+        "type": "revpi-getpin",
+        "z": "flow1",
+        "name": "Sensor 2",
+        "server": "revpi_server",
+        "getoverwritevalue": false,
+        "inputpin": "RTDValue_2",
+        "topic": "2",
+        "x": 120,
+        "y": 400,
+        "wires": [
+            [
+                "process_sensor"
+            ]
+        ]
+    },
+    {
+        "id": "process_sensor",
+        "type": "function",
+        "z": "flow1",
+        "name": "Process Sensor",
+        "func": "// Determine sensor (1 or 2) based on msg.topic\nconst sensor = msg.topic;\n// Convert reading (divide by 10)\nmsg.payload = msg.payload / 10;\n\n// Validate reading using global ranges\nif(sensor === '1') {\n    const min = global.get('min1');\n    const max = global.get('max1');\n    if(msg.payload < min || msg.payload > max) {\n        // Out of range: do not forward\n        return null;\n    }\n} else if(sensor === '2') {\n    const min = global.get('min2');\n    const max = global.get('max2');\n    if(msg.payload < min || msg.payload > max) {\n        return null;\n    }\n}\n\n// Add timestamp and sensor id\nmsg.payload = { value: msg.payload, date: Date.now(), sensor: sensor };\n\n// Prepare for MongoDB insert\nmsg.operation = \"insertOne\";\n// Create a collection name based on current date (e.g. raw_14_4_2025)\nconst d = new Date();\nmsg.collection = \"raw_\" + d.getDate() + \"_\" + (d.getMonth()+1) + \"_\" + d.getFullYear();\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 320,
+        "y": 360,
+        "wires": [
+            [
+                "insert_db"
+            ]
+        ]
+    },
+    {
+        "id": "insert_db",
+        "type": "mongodb4",
+        "z": "flow1",
+        "name": "Insert Reading",
+        "clientNode": "mongodb_client",
+        "mode": "collection",
+        "collection": "",
+        "operation": "",
+        "output": "toArray",
+        "maxTimeMS": "0",
+        "handleDocId": false,
+        "x": 520,
+        "y": 360,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "trigger_led",
+        "type": "trigger",
+        "z": "flow1",
+        "name": "Repeat LED",
+        "op1": "trigger",
+        "op2": "",
+        "op1type": "str",
+        "op2type": "str",
+        "duration": "1",
+        "extend": true,
+        "overrideDelay": false,
+        "units": "s",
+        "reset": "",
+        "bytopic": "all",
+        "topic": "",
+        "x": 120,
+        "y": 480,
+        "wires": [
+            [
+                "led_output"
+            ]
+        ]
+    },
+    {
+        "id": "led_output",
+        "type": "function",
+        "z": "flow1",
+        "name": "LED Output",
+        "func": "let s1 = global.get('s1');\nlet s2 = global.get('s2');\n\n// Determine LED codes for each sensor\n// For example, off = 3, on = 2, problem = blink (alternating 1/0)\nlet A1 = (s1 === false) ? 3 : (s1 === true ? 2 : (global.get('blinkOn') ? 1 : 0));\nlet A2 = (s2 === false) ? 3 : (s2 === true ? 2 : (global.get('blinkOn') ? 1 : 0));\n\nlet finalValue = A1 + (8 * A2);\nmsg.payload = \"piTest -w RevPiLED,\" + finalValue;\n\n// Toggle blink state\nglobal.set('blinkOn', !global.get('blinkOn'));\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 320,
+        "y": 480,
+        "wires": [
+            [
+                "exec_led"
+            ]
+        ]
+    },
+    {
+        "id": "exec_led",
+        "type": "exec",
+        "z": "flow1",
+        "name": "LED Command",
+        "command": "",
+        "addpay": "payload",
+        "append": "",
+        "useSpawn": "false",
+        "timer": "",
+        "oldrc": false,
+        "x": 520,
+        "y": 480,
+        "wires": [
+            [],
+            [],
+            []
+        ]
+    },
+    {
+        "id": "mongodb_client",
+        "type": "mongodb4-client",
+        "z": "",
+        "name": "",
+        "protocol": "mongodb+srv",
+        "hostname": "",
+        "port": "",
+        "dbName": "revPI",
+        "appName": "",
+        "authSource": "",
+        "authMechanism": "DEFAULT",
+        "tls": false,
+        "tlsCAFile": "",
+        "tlsCertificateKeyFile": "",
+        "tlsInsecure": false,
+        "connectTimeoutMS": "30000",
+        "socketTimeoutMS": "0",
+        "minPoolSize": "0",
+        "maxPoolSize": "100",
+        "maxIdleTimeMS": "0",
+        "uri": "your_mongodb_connection_uri",
+        "advanced": "{}"
+    },
+    {
+        "id": "mqtt_broker",
+        "type": "mqtt-broker",
+        "z": "",
+        "name": "getFreq",
+        "broker": "mqtts://your_mqtt_broker_address",
+        "port": "1883",
+        "tls": "",
+        "clientid": "",
+        "usetls": false,
+        "protocolVersion": "5",
+        "keepalive": "60",
+        "cleansession": true,
+        "birthTopic": "",
+        "birthQos": "0",
+        "birthPayload": "",
+        "birthMsg": {},
+        "closeTopic": "",
+        "closeQos": "0",
+        "closePayload": "",
+        "closeMsg": {},
+        "willTopic": "",
+        "willQos": "0",
+        "willPayload": "",
+        "willMsg": {},
+        "userProps": "",
+        "sessionExpiry": ""
+    },
+    {
+        "id": "revpi_server",
+        "type": "revpi-server",
+        "z": "",
+        "name": "",
+        "host": "localhost",
+        "port": "8000",
+        "user": "",
+        "password": "",
+        "rejectUnauthorized": false,
+        "ca": ""
+    }
+]

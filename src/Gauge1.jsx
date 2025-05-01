@@ -5,9 +5,9 @@ import "react-circular-progressbar/dist/styles.css";
 import { Container, Row, Col } from "react-bootstrap";
 import "./gauge.css";
 
-const API_URL = "http://localhost:3001/api/value";
+const API_URL = "http://localhost:3001/api/temp1";
 
-const GaugeDashboard = () => {
+const GaugeDashboard1 = () => {
   const [value, setValue] = useState(0);
   const [state, setState] = useState("OFF");
 
@@ -21,9 +21,10 @@ const GaugeDashboard = () => {
         const currentDate = new Date();
         //console.log("--> latDate :", lastDate );
         //console.log("--> Time difference in milliseconds:", lastDate - currentDate);
-        console.log("--> Time difference in secnds:", (lastDate - currentDate) / (36e5/3600));
-        
-        if ((Math.abs( lastDate- currentDate) / (36e5/3600)) > 60) {
+        //console.log("--> Time difference in secnds:", (lastDate - currentDate) / (36e5/3600));
+
+        console.log("--->", response.data.value.value)
+        if ((Math.abs( lastDate- currentDate) / (36e5/3600)) > 10) {
           setState("OFF");
         } else {
           setState("ON");
@@ -34,7 +35,7 @@ const GaugeDashboard = () => {
     };
 
     fetchValue();
-    const interval = setInterval(fetchValue, 3000); // Atualiza a cada 3s
+    const interval = setInterval(fetchValue, 500); // Atualiza a cada 3s
 
     return () => clearInterval(interval);
   }, []);
@@ -43,7 +44,7 @@ const GaugeDashboard = () => {
     <Container className="gauge_temp_container d-flex flex-column align-items-center">
       {/* Título e Indicador de Estado */}
       <div className="title-container">
-      <h2 className="temp_gauge_inst">Current Temperature</h2>
+      <h2 className="temp_gauge_inst">Current Temperature - DTC 1</h2>
         <div className="state-indicator" style={{ color: state === "ON" ? "green" : "red" }}>
           <div style={{ backgroundColor: state === "ON" ? "green" : "red" }}></div>
           {state}
@@ -56,9 +57,9 @@ const GaugeDashboard = () => {
         <CircularProgressbar
           value={value}
           text={`${value}°`}
-          circleRatio={1} // Garante 360°
+          circleRatio={1} // 360
           styles={buildStyles({
-            rotation: 1, // Faz o início ser no topo (12h)
+            rotation: 1, 
             strokeLinecap: 'butt',
             textSize: "15px",
             pathColor: `rgba(62, 152, 199, ${value / 100})`,
@@ -73,4 +74,4 @@ const GaugeDashboard = () => {
   );
 };
 
-export default GaugeDashboard;
+export default GaugeDashboard1;

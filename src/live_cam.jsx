@@ -35,7 +35,7 @@ const LiveCam = () => {
     };
 
     fetchValue();
-    const interval = setInterval(fetchValue, 100); // Atualiza a cada 3s
+    const interval = setInterval(fetchValue, 10000); // Atualiza a cada 3s
 
     return () => clearInterval(interval);
   }, []);

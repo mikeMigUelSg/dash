@@ -1,3 +1,5 @@
+
+
 require("dotenv").config();
 const express = require("express");
 const mongoose = require("mongoose");
@@ -23,14 +25,13 @@ const GaugeSchema = new mongoose.Schema({}, { strict: false });
 
 
 // GAUGE ----------------------------
-app.get("/api/value", async (req, res) => {
+app.get("/api/temp1", async (req, res) => {
     let today = new Date(req.query.today);
     const GaugeModel = mongoose.model("GaugeModel", GaugeSchema, "raw_".concat(today.getDate().toString(), "_", (today.getMonth()+1).toString(), "_", (today.getYear()+1900).toString()));
-    console.log("Endpoint /api/value chamado por:", req.headers.referer || "Desconhecido");
+    console.log("Endpoint /api/temp1 chamado por:", req.headers.referer || "Desconhecido");
      // Log dos valores lidos
     try {
-      const lastValue = await GaugeModel.findOne().sort({ _id: -1 });
-
+      const lastValue = await GaugeModel.findOne({"id": "1"}).sort({ _id: -1 });
       res.json({ value: lastValue });
     } catch (error) {
       console.error("Erro ao buscar valor:", error);
@@ -38,30 +39,53 @@ app.get("/api/value", async (req, res) => {
     }
   });
 
+// GAUGE ----------------------------
+app.get("/api/temp2", async (req, res) => {
+  let today = new Date(req.query.today);
+  const GaugeModel = mongoose.model("GaugeModel", GaugeSchema, "raw_".concat(today.getDate().toString(), "_", (today.getMonth()+1).toString(), "_", (today.getYear()+1900).toString()));
+  console.log("Endpoint /api/temp2 chamado por:", req.headers.referer || "Desconhecido");
+   // Log dos valores lidos
+  try {
+    const lastValue = await GaugeModel.findOne({"id": "2"}).sort({ _id: -1 });
+    res.json({ value: lastValue });
+  } catch (error) {
+    console.error("Erro ao buscar valor:", error);
+    res.status(500).json({ error: "Erro ao buscar valor" });
+  }
+});
+
 
   // TEMP HISTs ----------------------------
-  app.get("/api/histTemp", async (req, res) => {
-    console.log("Endpoint /api/value chamado por:", req.headers.referer || "Desconhecido");
+  app.get("/api/histTemp1", async (req, res) => {
+    console.log("---Endpoint /api/value chamado por:", req.headers.referer || "Desconhecido");
     const startDate = new Date(req.query.beg);
     const endDate = new Date(req.query.end);
     
     try {
       const results = [];
-    
+      const results2 = []
+
+      console.log(startDate);
+      console.log(endDate);
 
       // Loop through each day in the range
       for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
         const GaugeModel = mongoose.model("GaugeModel", GaugeSchema, "raw_".concat(d.getDate().toString(), "_", (d.getMonth()+1).toString(), "_", (d.getYear()+1900).toString()));
         const dayStart = new Date(d);
         dayStart.setHours(0, 0, 0, 0); // Start of the day
-    
+        
         const dayEnd = new Date(d);
         dayEnd.setHours(23, 59, 59, 999); // End of the day
-    
+        console.log(d)
         const dailyResult = await GaugeModel.aggregate([
           {
             $match: {
-              date: { $gte: dayStart, $lte: dayEnd } // Filter by each day's range
+              date: { 
+                $gte: dayStart.getTime(),
+                $lte: dayEnd.getTime()
+              },
+              id: "1",             
+              value: { $lt: 100 }   
             }
           },
           {
@@ -80,10 +104,37 @@ app.get("/api/value", async (req, res) => {
     
         // Append daily results to the final array
         results.push(...dailyResult);
-      }
+
+        const dailyResult2 = await GaugeModel.aggregate([
+          {
+            $match: {
+              date: { 
+                $gte: dayStart.getTime(),
+                $lte: dayEnd.getTime()
+              },
+              id: "2",             
+              value: { $lt: 100 }   
+            }
+          },
+          {
+            $bucketAuto: {
+              groupBy: "$date", // Group by date
+              buckets: 100, // Divide into 100 buckets
+              output: {
+                avgValue: { $avg: "$value" }, // Podera ser utilizado dependendo da config 
+                firstValue: { $first: "$value" }, // First value
+                date: { $first: "$date" } 
+              }
+            }
+          },
+      
+          { $sort: { date: 1 } } 
+        ]);
     
-      console.log("Dados Agregados:", results);
-      res.json({ value: results });
+        results2.push(...dailyResult2);
+      }
+     
+      res.json({ value: results , value2: results2});
     
     } catch (error) {
       console.error("Erro na agregação:", error);
@@ -92,7 +143,7 @@ app.get("/api/value", async (req, res) => {
   });
 
 // liveCam ----------------------------
-      app.get("/api/liveCam", async (req, res) => {
+  app.get("/api/liveCam", async (req, res) => {
   
   const GaugeModel = mongoose.model("GaugeModel", GaugeSchema, "images");
   console.log("Endpoint /api/liveCam chamado por: (LiveCam)", req.headers.referer || "Desconhecido");
@@ -110,22 +161,24 @@ app.get("/api/value", async (req, res) => {
 });
 
 app.get("/api/getFreq", async (req, res) => {
+  const id = req.query.id; 
+  
   const GaugeModel = mongoose.model("GaugeModel", GaugeSchema, "config");
   console.log("Endpoint /api/getFreq chamado por:", req.headers.referer || "Desconhecido");
-
+  
   try {
-    let obj = await GaugeModel.findOne({ id_: "sampling_config" });
-
+    let obj = await GaugeModel.findOne({ id_: "config" });
+    
     // Verifica se obj existe
     if (!obj) {
       console.warn("Nenhum documento encontrado para 'sampling_config'");
       return res.status(404).json({ error: "Configuração não encontrada" });
     }
+    const c_freq = obj.frequency[`temp${id}`];
 
-    let c_freq = obj.frequency ?? 0; // Se "frequency" não existir, assume 0 como padrão
-    console.log("Freq: ", c_freq);
+
     res.json({ value: c_freq });
-
+    
   } catch (error) {
     console.error("Erro ao buscar valor:", error);
     res.status(500).json({ error: "Erro ao buscar valor" });
@@ -133,45 +186,191 @@ app.get("/api/getFreq", async (req, res) => {
 });
 
 
-app.post("/api/updateFreq", async (req, res) => {
+app.get("/api/getStatus", async (req, res) => {
+  const id = req.query.id; 
+  
   const GaugeModel = mongoose.model("GaugeModel", GaugeSchema, "config");
-  console.log("Endpoint /api/updateFreq chamado por:", req.headers.referer || "Desconhecido");
-
-  const { value } = req.body; // Captura o valor enviado pelo React
-
-  // Validação: verifica se o valor é um número válido
-  if (!value || isNaN(value)) {
-    return res.status(400).json({ error: "Valor inválido" });
-  }
-
+  console.log("Endpoint /api/getStatus chamado por:", req.headers.referer || "Desconhecido");
+  
   try {
-    // Converte o valor para número
-    const newValue = Number(value);
-
-    // Atualiza APENAS o campo "frequency" no documento "sampling_config"
-    const updatedConfig = await GaugeModel.findOneAndUpdate(
-      { id_: "sampling_config" },  // Filtra pelo ID correto
-      { $set: { frequency: newValue } },  // Atualiza SOMENTE o campo "frequency"
-      { new: true, upsert: true }  // Retorna o documento atualizado ou cria um novo se não existir
-    );
-
-    if (!updatedConfig) {
+    let obj = await GaugeModel.findOne({ id_: "config" });
+    
+    // Verifica se obj existe
+    if (!obj) {
+      console.warn("Nenhum documento encontrado para 'sampling_config'");
       return res.status(404).json({ error: "Configuração não encontrada" });
     }
+    const c_status = obj.status[`temp${id}`];
 
-    console.log("Frequência de amostragem atualizada para:", updatedConfig.frequency);
-    res.json({ message: "Frequência atualizada com sucesso", newValue: updatedConfig.frequency });
 
+    res.json({ value: c_status });
+    
   } catch (error) {
-    console.error("Erro ao atualizar frequência:", error);
-    res.status(500).json({ error: "Erro ao atualizar frequência" });
+    console.error("Erro ao buscar valor:", error);
+    res.status(500).json({ error: "Erro ao buscar valor" });
   }
 });
 
 
 
+const mqtt = require("mqtt");
 
+
+const mqttClient = mqtt.connect("mqtts://8e8ca6be0c03462999d24017428566c5.s1.eu.hivemq.cloud:8883", {
+  username: "admin",  // substitui pelo teu username do HiveMQ
+  password: "Admin123",  // substitui pela tua password do HiveMQ
+});
+
+
+mqttClient.on("connect", () => {
+  console.log("✅ Conectado ao Broker MQTT HiveMQ (SSL/TLS)");
+});
+
+mqttClient.on("error", (error) => {
+  console.error("❌ Erro na conexão MQTT:", error);
+});
+
+
+app.post("/api/updateStatus", async (req, res) => {
+  console.log("Endpoint /api/updateStatus chamado por:", req.headers.referer || "Desconhecido");
+
+  const { value, id } = req.body; 
+
+  const GaugeModel = mongoose.model("GaugeModel", GaugeSchema, "config");
+
+  if (typeof value !== "boolean") {
+    return res.status(400).json({ error: "Valor inválido" });
+  }
   
+
+  try {
+    const newValue = value;
+
+    // -------------------MQTT------------------------
+    const topic = "config/temp" + id + "/status";
+    const message = JSON.stringify({ status: newValue });
+
+    mqttClient.publish(topic, message, { qos: 1 }, async (err) => {
+      if (err) {
+        console.error("Erro ao publicar mensagem MQTT:", err);
+        return res.status(500).json({ error: "Erro ao publicar no MQTT" });
+      }
+
+      console.log(`MQTT: Frequência publicada no tópico ${topic}:`, newValue);
+
+      // -------------------MongoDB------------------------
+      const updateField = `status.temp${id}`;
+      
+      const updatedConfig = await GaugeModel.findOneAndUpdate(
+        { id_: "config" },
+        { $set: { [updateField]: newValue } },
+        { new: true, upsert: true }
+      );
+      
+
+
+      res.json({
+        message: "Frequência publicada e atualizada com sucesso",
+        newValue: updatedConfig.frequency,
+      });
+    });
+  } catch (error) {
+    console.error("Erro interno:", error);
+    res.status(500).json({ error: "Erro interno no servidor" });
+  }
+});
+
+
+app.post("/api/updateRange", async(req,res) => {
+  console.log("Endpoint /api/updateRange chamado por:", req.headers.referer || "Desconhecido");
+  const {type , id, value} = req.body; 
+  const GaugeModel = mongoose.model("GaugeModel", GaugeSchema, "config");
+
+  if(isNaN(value)){
+    return res.status(400).json("Valor incorreto para o range");
+  }
+
+  try {
+    const newValue = Number(value);
+
+    // ------------------------- MQTT -------------------------
+    const topic = "config/temp" + id + "/range" + type;
+    const message = JSON.stringify({ range: newValue });
+
+    mqttClient.publish(topic, message, { qos: 1 }, async (err) => {
+      if (err) {
+        console.error("Erro ao publicar mensagem MQTT:", err);
+        return res.status(500).json({ error: "Erro ao publicar no MQTT" });
+      }
+
+      console.log(`Frequência publicada no tópico ${topic}:`, newValue);
+
+      //------------------------vMONGO DB ---------------------
+      const updateField = `range.${id}.${type}`;
+      console.log(updateField); 
+      const updatedConfig = await GaugeModel.findOneAndUpdate(
+        { id_: "config" },
+        { $set: { [updateField]: newValue } },
+        { new: true, upsert: true }
+      );
+  
+
+      res.json({
+        message: "Range publicado e atualizado com sucesso",
+      });
+    });
+  } catch (error) {
+    console.error("Erro interno:", error);
+    res.status(500).json({ error: "Erro interno no servidor" });
+  }
+});
+
+
+app.post("/api/updateFreq", async (req, res) => {
+  console.log("Endpoint /api/updateFreq chamado por:", req.headers.referer || "Desconhecido");
+
+  const { value, id } = req.body; 
+
+  const GaugeModel = mongoose.model("GaugeModel", GaugeSchema, "config");
+
+  if (!value || isNaN(value)) {
+    return res.status(400).json({ error: "Valor inválido" });
+  }
+
+  try {
+    const newValue = Number(value);
+
+    // Publica diretamente no tópico MQTT
+    const topic = "config/temp" + id + "/freq";
+    const message = JSON.stringify({ frequency: newValue });
+
+    mqttClient.publish(topic, message, { qos: 1 }, async (err) => {
+      if (err) {
+        console.error("Erro ao publicar mensagem MQTT:", err);
+        return res.status(500).json({ error: "Erro ao publicar no MQTT" });
+      }
+
+      console.log(`Frequência publicada no tópico ${topic}:`, newValue);
+
+      // Atualiza APENAS o campo "frequency" no documento "sampling_config"
+      const updateField = `frequency.temp${id}`;
+
+      const updatedConfig = await GaugeModel.findOneAndUpdate(
+        { id_: "config" },
+        { $set: { [updateField]: newValue } },
+        { new: true, upsert: true }
+      );
+      
+      res.json({
+        message: "Frequência publicada e atualizada com sucesso",
+        newValue: updatedConfig.frequency,
+      });
+    });
+  } catch (error) {
+    console.error("Erro interno:", error);
+    res.status(500).json({ error: "Erro interno no servidor" });
+  }
+});
 
 // Iniciar o servidor
 const PORT = process.env.PORT || 3001;
