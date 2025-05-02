@@ -88,6 +88,35 @@ body.dark .section-title {
   gap: 1.5rem;
 }
 
+/* Control widget container with theme support */
+.control-widget {
+  background-color: var(--card-bg);
+  border-radius: 0.5rem;
+  border: 1px solid var(--border-light);
+  padding: 1.25rem;
+  transition: all 0.3s ease;
+}
+
+.control-widget.dark {
+  background-color: var(--dark-card-bg);
+  border-color: var(--dark-border-light);
+}
+
+.control-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 0 0 1.25rem 0;
+  color: var(--text-primary);
+}
+
+.control-widget.dark .control-title {
+  color: var(--dark-text-primary);
+}
+
+/* Responsive layouts */
 @media (min-width: 768px) {
   .sensor-content {
     grid-template-columns: 1fr 2fr;

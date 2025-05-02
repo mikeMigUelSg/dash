@@ -2,11 +2,9 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { Clock, ThermometerSun, Power, Settings, Save } from "lucide-react";
-import { useTheme } from "../context/ThemeContext.jsx";
 import "./InputWidget.css";
 
 const InputWidget = ({ sensorId }) => {
-  const { theme } = useTheme();
   const [samplingPeriod, setSamplingPeriod] = useState("");
   const [currentPeriod, setCurrentPeriod] = useState(null);
   const [sensorActive, setSensorActive] = useState(null);
@@ -30,9 +28,6 @@ const InputWidget = ({ sensorId }) => {
           params: { id: sensorId }
         });
         setSensorActive(statusResponse.data.value);
-        
-        // Fetch min/max temperature range would go here
-        // ... (omitted for simplicity)
         
       } catch (error) {
         console.error("Error fetching sensor configuration:", error);
@@ -127,7 +122,7 @@ const InputWidget = ({ sensorId }) => {
   };
   
   return (
-    <div className={`control-widget ${theme}`}>
+    <>
       <h3 className="control-title">
         <Settings size={16} />
         Sensor {sensorId} Configuration
@@ -141,7 +136,7 @@ const InputWidget = ({ sensorId }) => {
           </div>
           
           <div className="control-form">
-            <div className="input-group">
+            <div className="input-row">
               <input
                 type="text"
                 className="control-input"
@@ -200,7 +195,7 @@ const InputWidget = ({ sensorId }) => {
           <div className="range-controls">
             <div className="range-input">
               <label className="range-label">Min (°C)</label>
-              <div className="input-group">
+              <div className="input-row">
                 <input
                   type="text"
                   className="control-input"
@@ -221,7 +216,7 @@ const InputWidget = ({ sensorId }) => {
             
             <div className="range-input">
               <label className="range-label">Max (°C)</label>
-              <div className="input-group">
+              <div className="input-row">
                 <input
                   type="text"
                   className="control-input"
@@ -248,7 +243,7 @@ const InputWidget = ({ sensorId }) => {
           {notification.message}
         </div>
       )}
-    </div>
+    </>
   );
 };
 

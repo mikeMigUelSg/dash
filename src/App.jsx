@@ -8,8 +8,18 @@ import LineChart1 from "./components/charts/LineChart1";
 import LineChart2 from "./components/charts/LineChart2";
 import InputWidget1 from "./components/controls/InputWidget1";
 import InputWidget2 from "./components/controls/InputWidget2";
-import { ThemeProvider } from "./components/context/ThemeContext";
+import { ThemeProvider, useTheme } from "./components/context/ThemeContext";
 import "./App.css";
+
+// Create a themed wrapper for the control widget
+const ThemedControlWidget = ({ children }) => {
+  const { theme } = useTheme();
+  return (
+    <div className={`control-widget ${theme}`}>
+      {children}
+    </div>
+  );
+};
 
 function App() {
   const [temps1, setTemps1] = useState([]);
@@ -32,9 +42,9 @@ function App() {
               <div className="chart-widget">
                 <LineChart1 temps={temps1} />
               </div>
-              <div className="control-widget">
+              <ThemedControlWidget>
                 <InputWidget1 />
-              </div>
+              </ThemedControlWidget>
             </div>
           </section>
           
@@ -48,9 +58,9 @@ function App() {
               <div className="chart-widget">
                 <LineChart2 temps={temps2} />
               </div>
-              <div className="control-widget">
+              <ThemedControlWidget>
                 <InputWidget2 />
-              </div>
+              </ThemedControlWidget>
             </div>
           </section>
         </main>
