@@ -1,4 +1,4 @@
-// src/components/controls/FilterBar.jsx
+// src/components/controls/Filterbar/FilterBar.jsx
 import React, { useState } from 'react';
 import { Calendar, Filter, Share2, Search } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext.jsx';
@@ -17,22 +17,41 @@ const FilterBar = ({ setTemps, setTemps2 }) => {
   
   const handleApply = async () => {
     if (!startDate || !endDate) {
-      // Show error notification
+      alert("Please select both start and end dates");
       return;
     }
     
     setIsLoading(true);
     
     try {
+      console.log("Fetching data with params:", { beg: startDate, end: endDate });
       const response = await axios.get(API_URL, { 
         params: { beg: startDate, end: endDate } 
       });
       
-      setTemps(response.data.value);
-      setTemps2(response.data.value2);
+      console.log("API Response:", response.data);
+      
+      // Check if we have valid data for both sensors
+      if (response.data.value && Array.isArray(response.data.value)) {
+        console.log("Setting temps1 data:", response.data.value);
+        setTemps(response.data.value);
+      } else {
+        console.warn("No valid data for Sensor 1");
+        setTemps([]);
+      }
+      
+      if (response.data.value2 && Array.isArray(response.data.value2)) {
+        console.log("Setting temps2 data:", response.data.value2);
+        setTemps2(response.data.value2);
+      } else {
+        console.warn("No valid data for Sensor 2");
+        setTemps2([]);
+      }
     } catch (error) {
       console.error("Error fetching data:", error);
-      // Show error notification
+      alert("Error fetching data. Please try again.");
+      setTemps([]);
+      setTemps2([]);
     } finally {
       setIsLoading(false);
     }

@@ -1,75 +1,62 @@
-// src/App.jsx
+// App.jsx or your main layout component
 import React, { useState } from "react";
+import Navbar from "./components/layout/Navbar/Navbar";
+import FilterBar from "./components/controls/Filterbar/FilterBar";
 import GaugeDashboard1 from "./components/gauges/GaugeDashboard1";
 import GaugeDashboard2 from "./components/gauges/GaugeDashboard2";
 import LineChart1 from "./components/charts/LineChart1";
 import LineChart2 from "./components/charts/LineChart2";
-import Navbar from "./components/layout/Navbar/Navbar";
-import FilterBar from "./components/controls/FilterBar/FilterBar";
 import InputWidget1 from "./components/controls/InputWidget1";
 import InputWidget2 from "./components/controls/InputWidget2";
-import { ThemeProvider } from "./components/context/ThemeContext.jsx";
+import { ThemeProvider } from "./components/context/ThemeContext";
 import "./App.css";
 
-const App = () => {
-  const [temps, setTemps] = useState([]);
+function App() {
+  const [temps1, setTemps1] = useState([]);
   const [temps2, setTemps2] = useState([]);
 
   return (
     <ThemeProvider>
-      <div className="app-container">
+      <div className="app">
         <Navbar />
-        <div className="dashboard-content">
-          <div className="dashboard-header">
-            <h1 className="dashboard-title">RevPI Temperature Monitoring</h1>
-            <FilterBar setTemps={setTemps} setTemps2={setTemps2} />
-          </div>
+        <main className="app-content">
+          <FilterBar setTemps={setTemps1} setTemps2={setTemps2} />
           
-          <div className="dashboard-grid">
-            <div className="dashboard-card sensor-section">
-              <div className="card-header">
-                <h2>Temperature Sensor 1</h2>
-                <span className="card-subtitle">Primary measurement unit</span>
+          {/* Sensor 1 Section */}
+          <section className="sensor-section">
+            <h2 className="section-title">Sensor 1</h2>
+            <div className="sensor-content">
+              <div className="gauge-widget">
+                <GaugeDashboard1 />
               </div>
-              <div className="card-body">
-                <div className="sensor-data-row">
-                  <div className="gauge-container">
-                    <GaugeDashboard1 />
-                  </div>
-                  <div className="chart-container">
-                    <LineChart1 temps={temps} />
-                  </div>
-                </div>
-                <div className="controls-container">
-                  <InputWidget1 />
-                </div>
+              <div className="chart-widget">
+                <LineChart1 temps={temps1} />
+              </div>
+              <div className="control-widget">
+                <InputWidget1 />
               </div>
             </div>
-            
-            <div className="dashboard-card sensor-section">
-              <div className="card-header">
-                <h2>Temperature Sensor 2</h2>
-                <span className="card-subtitle">Secondary measurement unit</span>
+          </section>
+          
+          {/* Sensor 2 Section */}
+          <section className="sensor-section">
+            <h2 className="section-title">Sensor 2</h2>
+            <div className="sensor-content">
+              <div className="gauge-widget">
+                <GaugeDashboard2 />
               </div>
-              <div className="card-body">
-                <div className="sensor-data-row">
-                  <div className="gauge-container">
-                    <GaugeDashboard2 />
-                  </div>
-                  <div className="chart-container">
-                    <LineChart2 temps2={temps2} />
-                  </div>
-                </div>
-                <div className="controls-container">
-                  <InputWidget2 />
-                </div>
+              <div className="chart-widget">
+                <LineChart2 temps={temps2} />
+              </div>
+              <div className="control-widget">
+                <InputWidget2 />
               </div>
             </div>
-          </div>
-        </div>
+          </section>
+        </main>
       </div>
     </ThemeProvider>
   );
-};
+}
 
 export default App;

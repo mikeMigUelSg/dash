@@ -1,187 +1,131 @@
-/* src/styles/App.css */
+/* App.css */
 :root {
+  /* Light Theme */
   --primary: #3b82f6;
   --primary-dark: #2563eb;
-  --success: #22c55e;
-  --warning: #eab308;
+  --success: #10b981;
   --danger: #ef4444;
-  --background: #f8fafc;
+  --warning: #f59e0b;
+  --text-primary: #1f2937;
+  --text-secondary: #6b7280;
   --card-bg: #ffffff;
-  --text-primary: #1e293b;
-  --text-secondary: #64748b;
-  --border: #e2e8f0;
-  --border-light: #f1f5f9;
+  --bg: #f3f4f6;
+  --border: #e5e7eb;
+  --border-light: #f3f4f6;
   --shadow: rgba(0, 0, 0, 0.05);
   
-  /* Dark theme variables */
-  --dark-background: #0f172a;
-  --dark-card-bg: #1e293b;
-  --dark-text-primary: #f1f5f9;
-  --dark-text-secondary: #94a3b8;
-  --dark-border: #334155;
-  --dark-border-light: #475569;
-  --dark-shadow: rgba(0, 0, 0, 0.3);
+  /* Dark Theme */
+  --dark-primary: #3b82f6;
+  --dark-primary-dark: #2563eb;
+  --dark-success: #10b981;
+  --dark-danger: #ef4444;
+  --dark-warning: #f59e0b;
+  --dark-text-primary: #f3f4f6;
+  --dark-text-secondary: #9ca3af;
+  --dark-card-bg: #1f2937;
+  --dark-bg: #111827;
+  --dark-border: #374151;
+  --dark-border-light: #1f2937;
+  --dark-shadow: rgba(0, 0, 0, 0.2);
 }
 
-/* Base styles */
 body {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   margin: 0;
-  padding: 0;
-  background-color: var(--background);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: var(--bg);
   color: var(--text-primary);
   transition: all 0.3s ease;
 }
 
 body.dark {
-  background-color: var(--dark-background);
+  background-color: var(--dark-bg);
   color: var(--dark-text-primary);
 }
 
-/* App Container */
-.app-container {
+.app {
+  min-height: 100vh;
   display: flex;
   flex-direction: column;
-  min-height: 100vh;
 }
 
-.dashboard-content {
+.app-content {
   flex: 1;
-  padding: 1.5rem;
   max-width: 1440px;
   margin: 0 auto;
+  padding: 1.5rem;
   width: 100%;
+  box-sizing: border-box;
 }
 
-.dashboard-header {
-  margin-bottom: 1.5rem;
-}
-
-.dashboard-title {
-  font-size: 1.875rem;
-  font-weight: 700;
-  margin-bottom: 1.5rem;
-  color: var(--text-primary);
-}
-
-body.dark .dashboard-title {
-  color: var(--dark-text-primary);
-}
-
-.dashboard-grid {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-}
-
-/* Dashboard Card */
-.dashboard-card {
-  background-color: var(--card-bg);
+/* Sensor sections */
+.sensor-section {
+  margin-bottom: 2rem;
   border-radius: 0.5rem;
-  box-shadow: 0 4px 6px var(--shadow);
   overflow: hidden;
-  border: 1px solid var(--border);
-  transition: all 0.3s ease;
 }
 
-body.dark .dashboard-card {
-  background-color: var(--dark-card-bg);
-  border-color: var(--dark-border);
-  box-shadow: 0 4px 6px var(--dark-shadow);
-}
-
-.card-header {
-  padding: 1.25rem;
-  border-bottom: 1px solid var(--border-light);
-  background-color: rgba(59, 130, 246, 0.05);
-}
-
-body.dark .card-header {
-  border-bottom: 1px solid var(--dark-border);
-  background-color: rgba(59, 130, 246, 0.1);
-}
-
-.card-header h2 {
-  margin: 0;
+.section-title {
   font-size: 1.25rem;
   font-weight: 600;
+  margin: 0 0 1rem 0;
+  color: var(--text-primary);
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--border);
 }
 
-.card-subtitle {
-  font-size: 0.875rem;
-  color: var(--text-secondary);
-  display: block;
-  margin-top: 0.25rem;
+body.dark .section-title {
+  color: var(--dark-text-primary);
+  border-bottom-color: var(--dark-border);
 }
 
-body.dark .card-subtitle {
-  color: var(--dark-text-secondary);
-}
-
-.card-body {
-  padding: 1.25rem;
-}
-
-/* Sensor-specific layout */
-.sensor-section {
-  margin-bottom: 1.5rem;
-}
-
-.sensor-data-row {
+.sensor-content {
   display: grid;
   grid-template-columns: 1fr;
   gap: 1.5rem;
-  margin-bottom: 1.5rem;
 }
 
-.controls-container {
-  border: 1px solid var(--border-light);
-  border-radius: 0.5rem;
-  padding: 1.25rem;
-}
-
-body.dark .controls-container {
-  border-color: var(--dark-border-light);
-}
-
-.gauge-container {
-  display: flex;
-  justify-content: center;
-  padding: 1rem;
-  background-color: rgba(59, 130, 246, 0.05);
-  border-radius: 0.5rem;
-}
-
-body.dark .gauge-container {
-  background-color: rgba(59, 130, 246, 0.08);
-}
-
-.chart-container {
-  padding: 1rem;
-  border: 1px solid var(--border-light);
-  border-radius: 0.5rem;
-  height: 350px;
-}
-
-body.dark .chart-container {
-  border-color: var(--dark-border-light);
-}
-
-/* Responsive */
-@media screen and (min-width: 768px) {
-  .sensor-data-row {
-    grid-template-columns: 380px 1fr;
-  }
-}
-
-@media screen and (min-width: 1024px) {
-  .dashboard-grid {
-    flex-direction: row;
-    flex-wrap: wrap;
+@media (min-width: 768px) {
+  .sensor-content {
+    grid-template-columns: 1fr 2fr;
   }
   
-  .sensor-section {
-    flex: 1;
-    min-width: 500px;
+  .gauge-widget {
+    grid-column: 1;
+    grid-row: 1;
+  }
+  
+  .chart-widget {
+    grid-column: 2;
+    grid-row: 1;
+  }
+  
+  .control-widget {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+}
+
+@media (min-width: 1200px) {
+  .sensor-content {
+    grid-template-columns: 1fr 2fr 1fr;
+  }
+  
+  .gauge-widget {
+    grid-column: 1;
+    grid-row: 1;
+  }
+  
+  .chart-widget {
+    grid-column: 2;
+    grid-row: 1;
+  }
+  
+  .control-widget {
+    grid-column: 3;
+    grid-row: 1;
   }
 }

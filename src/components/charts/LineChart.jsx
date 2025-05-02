@@ -1,5 +1,5 @@
 // src/components/charts/LineChart.jsx
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
 import { Clock, Maximize2, Download } from "lucide-react";
 import { useTheme } from "../context/ThemeContext.jsx";
@@ -8,22 +8,58 @@ import "./Chart.css";
 const MyLineChart = ({ temps, title = "Temperature History" }) => {
   const { theme } = useTheme();
   const [timeRange, setTimeRange] = useState("1D");
+  const [formattedData, setFormattedData] = useState([]);
+  const [filteredData, setFilteredData] = useState([]);
   
-  // Format data for the chart
-  const formattedData = temps && temps.length > 0 
-    ? temps.map(temp => ({
-        ...temp,
-        date: new Date(temp.date).getTime(),
-        displayTime: new Date(temp.date).toLocaleTimeString("pt-PT", {
-          hour: "2-digit",
-          minute: "2-digit"
-        })
-      }))
-    : [];
+  // Effect to format data when temps change
+  useEffect(() => {
+    console.log("Processing temperatures data:", temps);
     
+    // Safety check for null or undefined temps
+    if (!temps || !Array.isArray(temps) || temps.length === 0) {
+      console.log("No valid temperature data received");
+      setFormattedData([]);
+      return;
+    }
+    
+    try {
+      const processed = temps.map(temp => {
+        if (!temp || !temp.date) {
+          console.warn("Invalid temperature entry:", temp);
+          return null;
+        }
+        
+        const timestamp = typeof temp.date === 'number' ? temp.date : new Date(temp.date).getTime();
+        
+        return {
+          ...temp,
+          date: timestamp,
+          displayTime: new Date(timestamp).toLocaleTimeString("pt-PT", {
+            hour: "2-digit",
+            minute: "2-digit"
+          })
+        };
+      }).filter(Boolean); // Remove any null entries
+      
+      console.log("Processed data:", processed);
+      setFormattedData(processed);
+    } catch (error) {
+      console.error("Error formatting temperature data:", error);
+      setFormattedData([]);
+    }
+  }, [temps]);
+  
+  // Effect to filter data when formattedData or timeRange changes
+  useEffect(() => {
+    filterDataByTimeRange();
+  }, [formattedData, timeRange]);
+  
   // Filter data based on selected time range
   const filterDataByTimeRange = () => {
-    if (!formattedData.length) return [];
+    if (!formattedData.length) {
+      setFilteredData([]);
+      return;
+    }
     
     const now = new Date().getTime();
     let cutoff;
@@ -45,10 +81,10 @@ const MyLineChart = ({ temps, title = "Temperature History" }) => {
         cutoff = 0;
     }
     
-    return formattedData.filter(item => item.date >= cutoff);
+    const filtered = formattedData.filter(item => item.date >= cutoff);
+    console.log(`Filtered data for ${timeRange}:`, filtered);
+    setFilteredData(filtered);
   };
-  
-  const filteredData = filterDataByTimeRange();
   
   const handleExportData = () => {
     // Implementation for exporting chart data as CSV
@@ -123,7 +159,7 @@ const MyLineChart = ({ temps, title = "Temperature History" }) => {
       </div>
       
       <div className="chart-body">
-        {formattedData.length === 0 ? (
+        {filteredData.length === 0 ? (
           <div className="no-data-message">
             <Clock size={24} />
             <p>No data available. Please select a date range and apply filters.</p>
