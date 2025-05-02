@@ -11,7 +11,7 @@ import InputWidget2 from "./components/controls/InputWidget2";
 import { ThemeProvider, useTheme } from "./components/context/ThemeContext";
 import "./App.css";
 
-// Create a themed wrapper for the control widget
+
 const ThemedControlWidget = ({ children }) => {
   const { theme } = useTheme();
   return (

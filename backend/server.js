@@ -22,6 +22,83 @@ db.once("open", () => console.log("Conectado ao MongoDB"));
 const GaugeSchema = new mongoose.Schema({}, { strict: false });
 
 
+// Add this route to your existing express backend (server.js)
+app.get('/api/tempStats', async (req, res) => {
+  const startDate = new Date(req.query.beg);
+  const endDate = new Date(req.query.end);
+  const sensorId = req.query.id; // Sensor ID (e.g., "1" or "2")
+
+  const values = [];
+
+  try {
+    for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
+      const GaugeModel = mongoose.model("GaugeModel", GaugeSchema, "raw_".concat(d.getDate(), "_", (d.getMonth() + 1), "_", (d.getFullYear())));
+      const dailyValues = await GaugeModel.find({
+        date: { $gte: d.setHours(0,0,0,0), $lte: d.setHours(23,59,59,999) },
+        id: sensorId,
+        value: { $lt: 100 }
+      }).select('value -_id');
+
+      dailyValues.forEach(doc => values.push(doc.value));
+    }
+
+    if (values.length === 0) {
+      return res.status(404).json({ error: "No data found for the given interval." });
+    }
+
+    // Calculations
+    const mean = values.reduce((a, b) => a + b, 0) / values.length;
+    const max = Math.max(...values);
+    const min = Math.min(...values);
+    const std = Math.sqrt(values.reduce((a, b) => a + (b - mean) ** 2, 0) / values.length);
+
+    res.json({ mean, max, min, std });
+
+  } catch (error) {
+    console.error("Error fetching statistics:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+app.get('/api/movingAverage', async (req, res) => {
+  const startDate = new Date(req.query.beg);
+  const endDate = new Date(req.query.end);
+  const sensorId = req.query.id;
+  const windowSize = parseInt(req.query.windowSize) || 5; // default window size
+
+  const values = [];
+
+  try {
+    for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
+      const GaugeModel = mongoose.model(\"GaugeModel\", GaugeSchema, \"raw_\".concat(d.getDate(), \"_\", (d.getMonth() + 1), \"_\", (d.getFullYear())));
+      const dailyValues = await GaugeModel.find({
+        date: { $gte: d.setHours(0,0,0,0), $lte: d.setHours(23,59,59,999) },
+        id: sensorId,
+        value: { $lt: 100 }
+      }).select('value -_id');
+
+      dailyValues.forEach(doc => values.push(doc.value));
+    }
+
+    if (values.length < windowSize) {
+      return res.status(400).json({ error: \"Insufficient data points for the moving average calculation.\" });
+    }
+
+    const movingAverages = [];
+    for (let i = 0; i <= values.length - windowSize; i++) {
+      const window = values.slice(i, i + windowSize);
+      const avg = window.reduce((a, b) => a + b, 0) / windowSize;
+      movingAverages.push(avg);
+    }
+
+    res.json({ movingAverages });
+
+  } catch (error) {
+    console.error(\"Error calculating moving averages:\", error);
+    res.status(500).json({ error: \"Internal server error\" });
+  }
+});
+
 
 
 // GAUGE ----------------------------
