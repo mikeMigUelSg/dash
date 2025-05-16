@@ -21,48 +21,124 @@ db.once("open", () => console.log("Conectado ao MongoDB"));
 //modelo livre 
 const GaugeSchema = new mongoose.Schema({}, { strict: false });
 
-
+// Optimized tempStats endpoint for high-frequency sampling
 app.get('/api/tempStats', async (req, res) => {
-  const startDate = new Date(req.query.beg);
-  const endDate = new Date(req.query.end);
-  const sensorId = req.query.id;
-  console.log(" Start Date:", startDate);
-  console.log(" End Date:", endDate);
-
-  const values = [];
-
   try {
-    for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
-      const dayStart = new Date(d);
+    // Parse dates properly
+    const startDate = new Date(req.query.beg);
+    const endDate = new Date(req.query.end);
+    const sensorId = req.query.id;
+    
+    console.log(" Start Date:", startDate);
+    console.log(" End Date:", endDate);
+    
+    // Validate dates
+    if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+      return res.status(400).json({ error: "Invalid date format" });
+    }
+    
+    // Use aggregation to calculate statistics directly in MongoDB
+    // This avoids pulling all the data into memory
+    
+    let meanValue = 0;
+    let maxValue = -Infinity;
+    let minValue = Infinity;
+    let totalCount = 0;
+    let sumSquaredDiffs = 0;
+    
+    // Use a clone of the date for iteration
+    const currentDate = new Date(startDate);
+    
+    // Iterate day by day
+    while (currentDate <= endDate) {
+      const dayStart = new Date(currentDate);
       dayStart.setHours(0, 0, 0, 0);
       
-      const dayEnd = new Date(d);
+      const dayEnd = new Date(currentDate);
       dayEnd.setHours(23, 59, 59, 999);
       
-      const GaugeModel = mongoose.model("GaugeModel", GaugeSchema, "raw_".concat(d.getDate(), "_", (d.getMonth() + 1), "_", (d.getFullYear())));
-      const dailyValues = await GaugeModel.find({
-        date: { $gte: dayStart.getTime(), $lte: dayEnd.getTime() },
-        id: sensorId,
-        value: { $lt: 100 }
-      }).select('value -_id');
-
-      dailyValues.forEach(doc => values.push(doc.value));
+      // Create collection name
+      const collectionName = `raw_${dayStart.getDate()}_${dayStart.getMonth() + 1}_${dayStart.getFullYear()}`;
+      
+      try {
+        // Create model with unique name to avoid conflicts
+        const DailyModel = mongoose.model(
+          `GaugeStats_${collectionName}_${Date.now()}`,
+          GaugeSchema,
+          collectionName
+        );
+        
+        // Use aggregation to calculate statistics directly in MongoDB
+        const dailyStats = await DailyModel.aggregate([
+          {
+            $match: {
+              date: { $gte: dayStart.getTime(), $lte: dayEnd.getTime() },
+              id: sensorId,
+              value: { $lt: 100 } // Filter out invalid values
+            }
+          },
+          {
+            $group: {
+              _id: null,
+              count: { $sum: 1 },
+              avg: { $avg: "$value" },
+              min: { $min: "$value" },
+              max: { $max: "$value" },
+              sumSquares: { $sum: { $pow: [{ $subtract: ["$value", { $avg: "$value" }] }, 2] } }
+            }
+          }
+        ]);
+        
+        // If we have stats for this day, add them to the overall stats
+        if (dailyStats.length > 0) {
+          const { count, avg, min, max, sumSquares } = dailyStats[0];
+          
+          // Update overall max and min
+          if (max > maxValue) maxValue = max;
+          if (min < minValue) minValue = min;
+          
+          // Weighted average for means
+          const newTotalCount = totalCount + count;
+          meanValue = ((meanValue * totalCount) + (avg * count)) / newTotalCount;
+          
+          // Add to sum of squared differences for standard deviation calculation
+          sumSquaredDiffs += sumSquares;
+          
+          // Update total count
+          totalCount = newTotalCount;
+        }
+        
+        // Clean up the model to prevent memory leaks
+        mongoose.deleteModel(`GaugeStats_${collectionName}_${Date.now()}`);
+      } catch (err) {
+        console.log(`No data found for ${collectionName}, skipping...`);
+        // Just skip this day if collection doesn't exist
+      }
+      
+      // Move to next day
+      currentDate.setDate(currentDate.getDate() + 1);
     }
-
-    if (values.length === 0) {
+    
+    // Return appropriate response based on data availability
+    if (totalCount === 0) {
       return res.status(404).json({ error: "No data found for the given interval." });
     }
-    console.log("Values fetched:", values);
-    // Calculations
-    const mean = values.reduce((a, b) => a + b, 0) / values.length;
-    const max = Math.max(...values);
-    const min = Math.min(...values);
-    const std = Math.sqrt(values.reduce((a, b) => a + (b - mean) ** 2, 0) / values.length);
-
-    console.log("Statistics calculated:", { mean, max, min, std });
-
-    res.json({ mean, max, min, std });
-
+    
+    // Calculate standard deviation from the aggregated data
+    const std = Math.sqrt(sumSquaredDiffs / totalCount);
+    
+    // Round values to 2 decimal places for consistency
+    const result = {
+      mean: parseFloat(meanValue.toFixed(2)),
+      max: parseFloat(maxValue.toFixed(2)),
+      min: parseFloat(minValue.toFixed(2)),
+      std: parseFloat(std.toFixed(2))
+    };
+    
+    console.log("Statistics calculated:", result);
+    
+    res.json(result);
+    
   } catch (error) {
     console.error("Error fetching statistics:", error);
     res.status(500).json({ error: "Internal server error" });

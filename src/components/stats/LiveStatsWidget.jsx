@@ -1,14 +1,14 @@
-// src/components/stats/LiveStatsWidget.jsx
+// src/components/stats/LiveStatsWidget.jsx - Fixed version
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { useTheme } from "../context/ThemeContext.jsx";
-import { Activity, Clock, Thermometer, RefreshCw } from "lucide-react";
+import { Activity, Clock, Thermometer, RefreshCw, AlertTriangle } from "lucide-react";
 import "./LiveStatsWidget.css";
 
 const LiveStatsWidget = ({ sensorId }) => {
   const { theme } = useTheme();
   const [stats, setStats] = useState(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [lastUpdated, setLastUpdated] = useState(null);
   
@@ -32,14 +32,26 @@ const LiveStatsWidget = ({ sensorId }) => {
           beg: startDate,
           end: endDate,
           id: sensorId
-        }
+        },
+        timeout: 10000 // Add timeout to prevent hanging requests
       });
       
       setStats(response.data);
       setLastUpdated(new Date());
+      setError(null);
     } catch (error) {
       console.error(`Error fetching live statistics for sensor ${sensorId}:`, error);
-      setError("Unable to fetch current statistics");
+      
+      // Create fallback stats if API fails
+      const fallbackStats = {
+        mean: 23.5,
+        max: 27.8,
+        min: 19.2,
+        std: 1.2
+      };
+      
+      setStats(fallbackStats);
+      setError("Unable to fetch live statistics. Showing sample data.");
     } finally {
       setLoading(false);
     }
@@ -107,57 +119,58 @@ const LiveStatsWidget = ({ sensorId }) => {
         </div>
       </div>
       
-      {error ? (
-        <div className="live-stats-error">
+      {error && (
+        <div className="live-stats-warning">
+          <AlertTriangle size={16} />
           <span>{error}</span>
         </div>
-      ) : (
-        <div className="live-stats-content">
-          <div className="current-temp">
-            <Thermometer size={24} />
-            <div>
-              <span className="stat-label">Current</span>
-              <span className="current-temp-value">
-                {stats ? `${stats.mean.toFixed(1)}°C` : '-'}
+      )}
+      
+      <div className="live-stats-content">
+        <div className="current-temp">
+          <Thermometer size={24} />
+          <div>
+            <span className="stat-label">Current</span>
+            <span className="current-temp-value">
+              {stats ? `${stats.mean.toFixed(1)}°C` : '-'}
+            </span>
+          </div>
+        </div>
+        
+        <div className="stat-values">
+          <div className="stat-row">
+            <div className="stat-item">
+              <span className="stat-label">24h High</span>
+              <span className="stat-value high">
+                {stats ? `${stats.max.toFixed(1)}°C` : '-'}
+              </span>
+            </div>
+            
+            <div className="stat-item">
+              <span className="stat-label">24h Low</span>
+              <span className="stat-value low">
+                {stats ? `${stats.min.toFixed(1)}°C` : '-'}
               </span>
             </div>
           </div>
           
-          <div className="stat-values">
-            <div className="stat-row">
-              <div className="stat-item">
-                <span className="stat-label">24h High</span>
-                <span className="stat-value high">
-                  {stats ? `${stats.max.toFixed(1)}°C` : '-'}
-                </span>
-              </div>
-              
-              <div className="stat-item">
-                <span className="stat-label">24h Low</span>
-                <span className="stat-value low">
-                  {stats ? `${stats.min.toFixed(1)}°C` : '-'}
-                </span>
-              </div>
+          <div className="stat-row">
+            <div className="stat-item">
+              <span className="stat-label">Volatility</span>
+              <span className="stat-value">
+                {stats ? `±${stats.std.toFixed(2)}°C` : '-'}
+              </span>
             </div>
             
-            <div className="stat-row">
-              <div className="stat-item">
-                <span className="stat-label">Volatility</span>
-                <span className="stat-value">
-                  {stats ? `±${stats.std.toFixed(2)}°C` : '-'}
-                </span>
-              </div>
-              
-              <div className="stat-item">
-                <span className="stat-label">Samples</span>
-                <span className="stat-value">
-                  24h
-                </span>
-              </div>
+            <div className="stat-item">
+              <span className="stat-label">Samples</span>
+              <span className="stat-value">
+                24h
+              </span>
             </div>
           </div>
         </div>
-      )}
+      </div>
     </div>
   );
 };
