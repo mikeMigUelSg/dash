@@ -2,16 +2,25 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { useTheme } from "../context/ThemeContext.jsx";
-import { AlertCircle, FileSpreadsheet, RefreshCw } from "lucide-react";
+import { 
+  AlertCircle, 
+  FileSpreadsheet, 
+  RefreshCw,
+  BarChart2,
+  Calendar, 
+  Search,
+  Download
+} from "lucide-react";
 import "./StatsSection.css";
 
-const StatsSection = ({ sensorId }) => {
+const StatsSection = ({ sensorId, title = "Historical Temperature Analysis" }) => {
   const { theme } = useTheme();
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
+  const [isExporting, setIsExporting] = useState(false);
 
   // Set default date range to last 7 days
   useEffect(() => {
@@ -61,48 +70,98 @@ const StatsSection = ({ sensorId }) => {
     fetchStats();
   };
 
+  const handleExport = () => {
+    if (!stats) return;
+    
+    setIsExporting(true);
+    
+    try {
+      // Create CSV content
+      const csvContent = [
+        "Metric,Value,Unit",
+        `Mean,${stats.mean.toFixed(2)},°C`,
+        `Maximum,${stats.max.toFixed(2)},°C`,
+        `Minimum,${stats.min.toFixed(2)},°C`, 
+        `Standard Deviation,${stats.std.toFixed(2)},°C`
+      ].join('\n');
+      
+      // Create blob and download
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      
+      link.setAttribute('href', url);
+      link.setAttribute('download', `sensor${sensorId}_stats_${startDate}_to_${endDate}.csv`);
+      link.style.visibility = 'hidden';
+      
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (error) {
+      console.error("Error exporting stats:", error);
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   return (
     <div className={`stats-section ${theme}`}>
       <div className="stats-header">
         <h3 className="stats-title">
-          <FileSpreadsheet size={16} />
-          Temperature Statistics
+          <BarChart2 size={18} />
+          {title}
         </h3>
         
-        <div className="stats-controls">
-          <div className="date-controls">
-            <div className="date-input-group">
-              <label className="date-label">From</label>
-              <input 
-                type="date" 
-                className="date-input" 
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-              />
+        <div className="stats-filter-bar">
+          <div className="date-range">
+            <div className="date-field">
+              <Calendar size={16} className="icon" />
+              <div className="date-inputs">
+                <div className="date-input-group">
+                  <label className="date-label">From</label>
+                  <input 
+                    type="date" 
+                    className="date-input" 
+                    value={startDate}
+                    onChange={(e) => setStartDate(e.target.value)}
+                  />
+                </div>
+                
+                <div className="date-input-group">
+                  <label className="date-label">To</label>
+                  <input 
+                    type="date" 
+                    className="date-input" 
+                    value={endDate}
+                    onChange={(e) => setEndDate(e.target.value)}
+                  />
+                </div>
+              </div>
             </div>
             
-            <div className="date-input-group">
-              <label className="date-label">To</label>
-              <input 
-                type="date" 
-                className="date-input" 
-                value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
-              />
+            <div className="filter-actions">
+              <button 
+                className="apply-btn" 
+                onClick={handleRefresh}
+                disabled={loading || !startDate || !endDate}
+              >
+                {loading ? (
+                  <span className="loading-spinner"></span>
+                ) : (
+                  <Search size={14} />
+                )}
+                Apply
+              </button>
+              
+              <button 
+                className="export-btn"
+                onClick={handleExport}
+                disabled={!stats || isExporting}
+              >
+                <Download size={14} />
+                Export
+              </button>
             </div>
-            
-            <button 
-              className="refresh-button" 
-              onClick={handleRefresh}
-              disabled={loading || !startDate || !endDate}
-            >
-              {loading ? (
-                <span className="loading-spinner"></span>
-              ) : (
-                <RefreshCw size={14} />
-              )}
-              Refresh
-            </button>
           </div>
         </div>
       </div>

@@ -2,11 +2,11 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
-import { Clock, Maximize2, Download, Settings, Sliders, X } from "lucide-react";
+import { Clock, Maximize2, Download, Settings, Sliders, X, Calendar, Search, Filter } from "lucide-react";
 import { useTheme } from "../context/ThemeContext.jsx";
 import "./Chart.css";
 
-const MyLineChart = ({ temps, title = "Temperature History", sensorId }) => {
+const MyLineChart = ({ temps, title = "Temperature History", sensorId, setTemps }) => {
   const { theme } = useTheme();
   const [timeRange, setTimeRange] = useState("1D");
   const [formattedData, setFormattedData] = useState([]);
@@ -17,6 +17,22 @@ const MyLineChart = ({ temps, title = "Temperature History", sensorId }) => {
   const [isMovingAvgSettingsOpen, setIsMovingAvgSettingsOpen] = useState(false);
   const [isCalculatingMA, setIsCalculatingMA] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
+  
+  // New state for chart filter
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+  const [isFilterVisible, setIsFilterVisible] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  
+  // Set default date range (last 7 days)
+  useEffect(() => {
+    const end = new Date();
+    const start = new Date();
+    start.setDate(start.getDate() - 7);
+    
+    setStartDate(start.toISOString().split('T')[0]);
+    setEndDate(end.toISOString().split('T')[0]);
+  }, []);
   
   // Effect to format data when temps change
   useEffect(() => {
@@ -206,6 +222,45 @@ const MyLineChart = ({ temps, title = "Temperature History", sensorId }) => {
       document.body.style.overflow = "auto";
     }
   };
+  
+  // New handler for fetching data with date filter
+  const handleFetchData = async () => {
+    if (!startDate || !endDate) {
+      alert("Please select both start and end dates");
+      return;
+    }
+    
+    setIsLoading(true);
+    
+    try {
+      console.log("Fetching data with params:", { beg: startDate, end: endDate, id: sensorId });
+      const response = await axios.get("http://localhost:3001/api/histTemp1", { 
+        params: { beg: startDate, end: endDate } 
+      });
+      
+      console.log("API Response:", response.data);
+      
+      // Check if we have valid data for the specific sensor
+      if (sensorId === 1 && response.data.value && Array.isArray(response.data.value)) {
+        console.log("Setting temps1 data:", response.data.value);
+        setTemps(response.data.value);
+      } else if (sensorId === 2 && response.data.value2 && Array.isArray(response.data.value2)) {
+        console.log("Setting temps2 data:", response.data.value2);
+        setTemps(response.data.value2);
+      } else {
+        console.warn(`No valid data for Sensor ${sensorId}`);
+        setTemps([]);
+      }
+      
+      // Hide filter after successful fetch
+      setIsFilterVisible(false);
+    } catch (error) {
+      console.error("Error fetching data:", error);
+      alert("Error fetching data. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   // Handle escape key to close expanded chart
   useEffect(() => {
@@ -262,6 +317,13 @@ const MyLineChart = ({ temps, title = "Temperature History", sensorId }) => {
             
             <div className="chart-actions">
               <button 
+                className={`chart-action-btn ${isFilterVisible ? "active" : ""}`} 
+                title="Filter data"
+                onClick={() => setIsFilterVisible(!isFilterVisible)}
+              >
+                <Filter size={16} />
+              </button>
+              <button 
                 className={`chart-action-btn ${showMovingAvg ? "active" : ""}`} 
                 title="Moving Average Settings"
                 onClick={toggleMovingAvgSettings}
@@ -286,6 +348,61 @@ const MyLineChart = ({ temps, title = "Temperature History", sensorId }) => {
             </div>
           </div>
         </div>
+
+        {/* Date Filter Panel */}
+        {isFilterVisible && (
+          <div className="chart-filter-panel">
+            <div className="filter-header">
+              <h4>Filter Data</h4>
+            </div>
+            <div className="filter-body">
+              <div className="date-controls">
+                <div className="date-field">
+                  <Calendar size={16} className="icon" />
+                  <div className="date-inputs">
+                    <div className="date-input-group">
+                      <label className="date-label">From</label>
+                      <input 
+                        type="date" 
+                        className="date-input" 
+                        value={startDate}
+                        onChange={(e) => setStartDate(e.target.value)}
+                      />
+                    </div>
+                    
+                    <div className="date-input-group">
+                      <label className="date-label">To</label>
+                      <input 
+                        type="date" 
+                        className="date-input" 
+                        value={endDate}
+                        onChange={(e) => setEndDate(e.target.value)}
+                      />
+                    </div>
+                  </div>
+                </div>
+                
+                <button 
+                  className="apply-filter-btn"
+                  onClick={handleFetchData}
+                  disabled={isLoading || !startDate || !endDate}
+                >
+                  {isLoading ? (
+                    <>
+                      <span className="loading-spinner"></span>
+                      Loading...
+                    </>
+                  ) : (
+                    <>
+                      <Search size={14} />
+                      Apply
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Moving Average Settings Panel */}
         {isMovingAvgSettingsOpen && !isExpanded && (
@@ -464,6 +581,13 @@ const MyLineChart = ({ temps, title = "Temperature History", sensorId }) => {
               
               <div className="chart-actions">
                 <button 
+                  className={`chart-action-btn ${isFilterVisible ? "active" : ""}`} 
+                  title="Filter data"
+                  onClick={() => setIsFilterVisible(!isFilterVisible)}
+                >
+                  <Filter size={16} />
+                </button>
+                <button 
                   className={`chart-action-btn ${showMovingAvg ? "active" : ""}`} 
                   title="Moving Average Settings"
                   onClick={toggleMovingAvgSettings}
@@ -480,6 +604,61 @@ const MyLineChart = ({ temps, title = "Temperature History", sensorId }) => {
                 </button>
               </div>
             </div>
+
+            {/* Date Filter Panel in Expanded View */}
+            {isFilterVisible && (
+              <div className="expanded-filter-panel">
+                <div className="filter-header">
+                  <h4>Filter Data</h4>
+                </div>
+                <div className="filter-body">
+                  <div className="date-controls">
+                    <div className="date-field">
+                      <Calendar size={16} className="icon" />
+                      <div className="date-inputs">
+                        <div className="date-input-group">
+                          <label className="date-label">From</label>
+                          <input 
+                            type="date" 
+                            className="date-input" 
+                            value={startDate}
+                            onChange={(e) => setStartDate(e.target.value)}
+                          />
+                        </div>
+                        
+                        <div className="date-input-group">
+                          <label className="date-label">To</label>
+                          <input 
+                            type="date" 
+                            className="date-input" 
+                            value={endDate}
+                            onChange={(e) => setEndDate(e.target.value)}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <button 
+                      className="apply-filter-btn"
+                      onClick={handleFetchData}
+                      disabled={isLoading || !startDate || !endDate}
+                    >
+                      {isLoading ? (
+                        <>
+                          <span className="loading-spinner"></span>
+                          Loading...
+                        </>
+                      ) : (
+                        <>
+                          <Search size={14} />
+                          Apply
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Moving Average Settings Panel in Expanded View */}
             {isMovingAvgSettingsOpen && (
@@ -536,7 +715,7 @@ const MyLineChart = ({ temps, title = "Temperature History", sensorId }) => {
                 <p>No data available. Please select a date range and apply filters.</p>
               </div>
             ) : (
-              <ResponsiveContainer width="100%" height={isMovingAvgSettingsOpen ? "60%" : "80%"}>
+              <ResponsiveContainer width="100%" height={isMovingAvgSettingsOpen || isFilterVisible ? "60%" : "80%"}>
                 <LineChart 
                   margin={{ top: 20, right: 40, left: 20, bottom: 20 }}
                 >

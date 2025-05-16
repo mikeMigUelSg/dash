@@ -2,11 +2,13 @@
 import React from "react";
 import MyLineChart from "./LineChart";
 
-const LineChart1 = ({ temps }) => {
+const LineChart1 = ({ temps, setTemps }) => {
   return (
     <MyLineChart 
       temps={temps} 
       title="Temperature History - Sensor 1" 
+      sensorId={1}
+      setTemps={setTemps}
     />
   );
 };
