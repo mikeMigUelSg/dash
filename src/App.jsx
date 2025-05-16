@@ -8,6 +8,8 @@ import LineChart1 from "./components/charts/LineChart1";
 import LineChart2 from "./components/charts/LineChart2";
 import InputWidget1 from "./components/controls/InputWidget1";
 import InputWidget2 from "./components/controls/InputWidget2";
+import StatsSection1 from "./components/stats/StatsSection1";
+import StatsSection2 from "./components/stats/StatsSection2";
 import { ThemeProvider, useTheme } from "./components/context/ThemeContext";
 import "./App.css";
 
@@ -40,12 +42,14 @@ function App() {
                 <GaugeDashboard1 />
               </div>
               <div className="chart-widget">
-                <LineChart1 temps={temps1} />
+                <LineChart1 temps={temps1} sensorId={1} />
               </div>
               <ThemedControlWidget>
                 <InputWidget1 />
               </ThemedControlWidget>
             </div>
+            {/* Add Stats Section for Sensor 1 */}
+            <StatsSection1 />
           </section>
           
           {/* Sensor 2 Section */}
@@ -56,12 +60,14 @@ function App() {
                 <GaugeDashboard2 />
               </div>
               <div className="chart-widget">
-                <LineChart2 temps={temps2} />
+                <LineChart2 temps={temps2} sensorId={2} />
               </div>
               <ThemedControlWidget>
                 <InputWidget2 />
               </ThemedControlWidget>
             </div>
+            {/* Add Stats Section for Sensor 2 */}
+            <StatsSection2 />
           </section>
         </main>
       </div>

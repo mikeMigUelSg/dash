@@ -1,168 +1,476 @@
 /* src/components/charts/Chart.css */
 .chart-container {
-    background-color: var(--card-bg);
-    border-radius: 0.5rem;
-    border: 1px solid var(--border-light);
-    padding: 1.25rem;
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-    transition: all 0.3s ease;
-  }
-  
-  .chart-container.dark {
-    background-color: var(--dark-card-bg);
-    border-color: var(--dark-border-light);
-  }
-  
+  background-color: var(--card-bg);
+  border-radius: 0.5rem;
+  border: 1px solid var(--border-light);
+  padding: 1.25rem;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.chart-container.dark {
+  background-color: var(--dark-card-bg);
+  border-color: var(--dark-border-light);
+}
+
+.chart-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.25rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.chart-title {
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 0;
+  color: var(--text-primary);
+}
+
+.chart-container.dark .chart-title {
+  color: var(--dark-text-primary);
+}
+
+.chart-controls {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.time-controls {
+  display: flex;
+  border-radius: 0.375rem;
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+
+.chart-container.dark .time-controls {
+  border-color: var(--dark-border);
+}
+
+.time-control-btn {
+  background: none;
+  border: none;
+  padding: 0.375rem 0.75rem;
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  color: var(--text-secondary);
+}
+
+.chart-container.dark .time-control-btn {
+  color: var(--dark-text-secondary);
+}
+
+.time-control-btn:not(:last-child) {
+  border-right: 1px solid var(--border);
+}
+
+.chart-container.dark .time-control-btn:not(:last-child) {
+  border-right-color: var(--dark-border);
+}
+
+.time-control-btn.active {
+  background-color: var(--primary);
+  color: white;
+}
+
+.chart-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.chart-action-btn {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 0.375rem;
+  padding: 0.375rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary);
+  transition: all 0.2s;
+}
+
+.chart-container.dark .chart-action-btn {
+  border-color: var(--dark-border);
+  color: var(--dark-text-secondary);
+}
+
+.chart-action-btn:hover:not(:disabled) {
+  background-color: var(--border-light);
+  color: var(--primary);
+}
+
+.chart-container.dark .chart-action-btn:hover:not(:disabled) {
+  background-color: var(--dark-border-light);
+  color: var(--primary);
+}
+
+.chart-action-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.chart-action-btn.active {
+  background-color: var(--primary);
+  color: white;
+}
+
+.chart-body {
+  flex: 1;
+  position: relative;
+  min-height: 300px;
+}
+
+.no-data-message {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  color: var(--text-secondary);
+  text-align: center;
+  padding: 0 2rem;
+}
+
+.chart-container.dark .no-data-message {
+  color: var(--dark-text-secondary);
+}
+
+/* Moving Average Settings Panel */
+.moving-avg-settings {
+  position: absolute;
+  top: 4rem;
+  right: 1.25rem;
+  width: 280px;
+  background-color: var(--card-bg);
+  border-radius: 0.5rem;
+  border: 1px solid var(--border);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  z-index: 10;
+  overflow: hidden;
+}
+
+.chart-container.dark .moving-avg-settings {
+  background-color: var(--dark-card-bg);
+  border-color: var(--dark-border);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+}
+
+.settings-header {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.chart-container.dark .settings-header {
+  border-bottom-color: var(--dark-border-light);
+}
+
+.settings-header h4 {
+  margin: 0;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.chart-container.dark .settings-header h4 {
+  color: var(--dark-text-primary);
+}
+
+.settings-body {
+  padding: 1rem;
+}
+
+.settings-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+
+.settings-row label {
+  font-size: 0.875rem;
+  color: var(--text-primary);
+}
+
+.chart-container.dark .settings-row label {
+  color: var(--dark-text-primary);
+}
+
+.settings-row input[type="number"] {
+  width: 60px;
+  padding: 0.375rem;
+  border: 1px solid var(--border);
+  border-radius: 0.25rem;
+  font-size: 0.875rem;
+  color: var(--text-primary);
+  background-color: var(--card-bg);
+}
+
+.chart-container.dark .settings-row input[type="number"] {
+  background-color: var(--dark-card-bg);
+  border-color: var(--dark-border);
+  color: var(--dark-text-primary);
+}
+
+.settings-footer {
+  padding: 0.75rem 1rem;
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  border-top: 1px solid var(--border-light);
+}
+
+.chart-container.dark .settings-footer {
+  border-top-color: var(--dark-border-light);
+}
+
+.cancel-btn, .apply-btn {
+  padding: 0.375rem 0.75rem;
+  border-radius: 0.25rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.cancel-btn {
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+}
+
+.chart-container.dark .cancel-btn {
+  border-color: var(--dark-border);
+  color: var(--dark-text-secondary);
+}
+
+.cancel-btn:hover {
+  background-color: var(--border-light);
+}
+
+.chart-container.dark .cancel-btn:hover {
+  background-color: var(--dark-border-light);
+}
+
+.apply-btn {
+  background-color: var(--primary);
+  border: none;
+  color: white;
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.apply-btn:hover {
+  background-color: var(--primary-dark);
+}
+
+/* Toggle Switch */
+.toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 36px;
+  height: 20px;
+}
+
+.toggle-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.toggle-slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: var(--border);
+  transition: 0.4s;
+  border-radius: 20px;
+}
+
+.chart-container.dark .toggle-slider {
+  background-color: var(--dark-border);
+}
+
+.toggle-slider:before {
+  position: absolute;
+  content: "";
+  height: 16px;
+  width: 16px;
+  left: 2px;
+  bottom: 2px;
+  background-color: white;
+  transition: 0.4s;
+  border-radius: 50%;
+}
+
+input:checked + .toggle-slider {
+  background-color: var(--primary);
+}
+
+input:checked + .toggle-slider:before {
+  transform: translateX(16px);
+}
+
+/* Responsive fixes */
+@media (max-width: 576px) {
   .chart-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 1.25rem;
-    flex-wrap: wrap;
-    gap: 1rem;
-  }
-  
-  .chart-title {
-    font-size: 1rem;
-    font-weight: 600;
-    margin: 0;
-    color: var(--text-primary);
-  }
-  
-  .chart-container.dark .chart-title {
-    color: var(--dark-text-primary);
+    flex-direction: column;
+    align-items: flex-start;
   }
   
   .chart-controls {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
+    width: 100%;
+    justify-content: space-between;
   }
   
   .time-controls {
-    display: flex;
-    border-radius: 0.375rem;
-    border: 1px solid var(--border);
-    overflow: hidden;
-  }
-  
-  .chart-container.dark .time-controls {
-    border-color: var(--dark-border);
+    flex-grow: 1;
+    justify-content: space-around;
   }
   
   .time-control-btn {
-    background: none;
-    border: none;
-    padding: 0.375rem 0.75rem;
-    font-size: 0.75rem;
-    cursor: pointer;
-    transition: all 0.2s;
-    color: var(--text-secondary);
-  }
-  
-  .chart-container.dark .time-control-btn {
-    color: var(--dark-text-secondary);
-  }
-  
-  .time-control-btn:not(:last-child) {
-    border-right: 1px solid var(--border);
-  }
-  
-  .chart-container.dark .time-control-btn:not(:last-child) {
-    border-right-color: var(--dark-border);
-  }
-  
-  .time-control-btn.active {
-    background-color: var(--primary);
-    color: white;
-  }
-  
-  .chart-actions {
-    display: flex;
-    gap: 0.5rem;
-  }
-  
-  .chart-action-btn {
-    background: none;
-    border: 1px solid var(--border);
-    border-radius: 0.375rem;
-    padding: 0.375rem;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: var(--text-secondary);
-    transition: all 0.2s;
-  }
-  
-  .chart-container.dark .chart-action-btn {
-    border-color: var(--dark-border);
-    color: var(--dark-text-secondary);
-  }
-  
-  .chart-action-btn:hover:not(:disabled) {
-    background-color: var(--border-light);
-    color: var(--primary);
-  }
-  
-  .chart-container.dark .chart-action-btn:hover:not(:disabled) {
-    background-color: var(--dark-border-light);
-    color: var(--primary);
-  }
-  
-  .chart-action-btn:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
-  
-  .chart-body {
     flex: 1;
-    position: relative;
-    min-height: 300px;
-  }
-  
-  .no-data-message {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 1rem;
-    color: var(--text-secondary);
     text-align: center;
-    padding: 0 2rem;
+    padding: 0.375rem 0.5rem;
   }
   
-  .chart-container.dark .no-data-message {
-    color: var(--dark-text-secondary);
+  .moving-avg-settings {
+    width: calc(100% - 2.5rem);
+    right: 1.25rem;
+    left: 1.25rem;
   }
-  
-  /* Responsive fixes */
-  @media (max-width: 576px) {
-    .chart-header {
-      flex-direction: column;
-      align-items: flex-start;
-    }
-    
-    .chart-controls {
-      width: 100%;
-      justify-content: space-between;
-    }
-    
-    .time-controls {
-      flex-grow: 1;
-      justify-content: space-around;
-    }
-    
-    .time-control-btn {
-      flex: 1;
-      text-align: center;
-      padding: 0.375rem 0.5rem;
-    }
+}
+
+/* Expanded Chart Modal Styles */
+.chart-expanded-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.75);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  padding: 20px;
+  box-sizing: border-box;
+  animation: fadeIn 0.2s ease-in-out;
+  overflow: hidden;
+}
+
+.chart-expanded-content {
+  background-color: var(--bg-primary);
+  width: 90%;
+  height: 90%;
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.dark .chart-expanded-content {
+  background-color: var(--dark-card-bg);
+  color: var(--dark-text-primary);
+  border: 1px solid var(--dark-border);
+}
+
+.expanded-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 24px;
+  border-bottom: 1px solid var(--border);
+}
+
+.dark .expanded-header {
+  border-bottom: 1px solid var(--dark-border);
+}
+
+.expanded-title {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+.close-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px;
+  border-radius: 50%;
+  transition: background-color 0.2s, color 0.2s;
+}
+
+.close-btn:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+  color: var(--text-primary);
+}
+
+.dark .close-btn {
+  color: var(--dark-text-secondary);
+}
+
+.dark .close-btn:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+  color: var(--dark-text-primary);
+}
+
+.expanded-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 24px;
+  border-bottom: 1px solid var(--border);
+}
+
+.dark .expanded-controls {
+  border-bottom: 1px solid var(--dark-border);
+}
+
+/* Expanded Moving Average Settings */
+.expanded-settings {
+  margin: 0 24px;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  max-width: 600px;
+  width: auto;
+  position: relative;
+  z-index: 10;
+}
+
+.dark .expanded-settings {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+/* Animation */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
   }
+  to {
+    opacity: 1;
+  }
+}

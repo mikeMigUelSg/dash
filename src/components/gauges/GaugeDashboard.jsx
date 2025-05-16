@@ -200,20 +200,7 @@ const GaugeDashboard = ({ sensorId, apiEndpoint }) => {
           />
         </div>
         
-        <div className="gauge-stats">
-          <div className="stat-item">
-            <span className="stat-label">Min</span>
-            <span className="stat-value">{minValue.toFixed(1)}°C</span>
-          </div>
-          <div className="stat-item">
-            <span className="stat-label">Avg</span>
-            <span className="stat-value">{avgValue.toFixed(1)}°C</span>
-          </div>
-          <div className="stat-item">
-            <span className="stat-label">Max</span>
-            <span className="stat-value">{maxValue.toFixed(1)}°C</span>
-          </div>
-        </div>
+
       </div>
     </div>
   );

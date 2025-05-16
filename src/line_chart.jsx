@@ -8,6 +8,7 @@ import Row from "react-bootstrap/Row";
 
 
 
+
 const MyLineChart = ({ temps }) => {
     console.log("Dados recebidos para o gráfico:", temps);
 

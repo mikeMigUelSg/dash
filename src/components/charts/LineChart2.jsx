@@ -7,6 +7,7 @@ const LineChart2 = ({ temps }) => {
     <MyLineChart 
       temps={temps} 
       title="Temperature History - Sensor 2" 
+      sensorId={2}
     />
   );
 };
