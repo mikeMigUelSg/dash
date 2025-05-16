@@ -142,7 +142,7 @@ const IntegratedStatsSection = ({ sensorId, dateRange, temps }) => {
           <div className="stat-content">
             <span className="stat-label">Standard Deviation</span>
             <span className="stat-value">
-              {displayStats.std.toFixed(2)} °C
+              {Math.max(0.01, displayStats.std).toFixed(2)} °C
             </span>
           </div>
         </div>

@@ -1,4 +1,4 @@
-/* App.css - Updated for new layout */
+/* src/App.css update */
 :root {
   /* Light Theme */
   --primary: #3b82f6;
@@ -143,6 +143,13 @@ body.dark .section-title {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   gap: 1rem;
+}
+
+/* Make all columns the same height */
+.gauge-widget, .chart-stats-widget, .control-widget {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
 }
 
 /* Responsive layouts */

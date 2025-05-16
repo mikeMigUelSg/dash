@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { useTheme } from "../context/ThemeContext.jsx";
-import { Activity, Clock, Thermometer, RefreshCw, AlertTriangle } from "lucide-react";
+import { Activity, Clock, RefreshCw, AlertTriangle } from "lucide-react";
 import "./LiveStatsWidget.css";
 
 const LiveStatsWidget = ({ sensorId }) => {
@@ -21,13 +21,12 @@ const LiveStatsWidget = ({ sensorId }) => {
       const today = new Date();
       const yesterday = new Date(today);
       yesterday.setDate(yesterday.getDate() - 1);
-      
-      // Format dates
-      const startDate = yesterday.toISOString().split('T')[0];
-      const endDate = today.toISOString().split('T')[0];
+
+      const startDate = yesterday.toISOString(); // full ISO timestamp
+    const endDate = today.toISOString();
       
       // Fetch data
-      const response = await axios.get("http://localhost:3001/api/tempStats", {
+      const response = await axios.get("http://localhost:3001/api/temp24", {
         params: {
           beg: startDate,
           end: endDate,
@@ -127,16 +126,6 @@ const LiveStatsWidget = ({ sensorId }) => {
       )}
       
       <div className="live-stats-content">
-        <div className="current-temp">
-          <Thermometer size={24} />
-          <div>
-            <span className="stat-label">Current</span>
-            <span className="current-temp-value">
-              {stats ? `${stats.mean.toFixed(1)}°C` : '-'}
-            </span>
-          </div>
-        </div>
-        
         <div className="stat-values">
           <div className="stat-row">
             <div className="stat-item">
@@ -156,16 +145,16 @@ const LiveStatsWidget = ({ sensorId }) => {
           
           <div className="stat-row">
             <div className="stat-item">
-              <span className="stat-label">Volatility</span>
+              <span className="stat-label">Std</span>
               <span className="stat-value">
                 {stats ? `±${stats.std.toFixed(2)}°C` : '-'}
               </span>
             </div>
             
             <div className="stat-item">
-              <span className="stat-label">Samples</span>
+              <span className="stat-label">Mean</span>
               <span className="stat-value">
-                24h
+                {stats ? `${stats.mean.toFixed(1)}°C` : '-'}
               </span>
             </div>
           </div>
