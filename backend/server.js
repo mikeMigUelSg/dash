@@ -330,6 +330,8 @@ app.get("/api/temp2", async (req, res) => {
         throw new Error(`Open-Meteo API error: ${weatherRes.status} ${weatherRes.statusText}`);
       }
       const weatherData = await weatherRes.json();
+
+      console.log("Weather data:", weatherData);  
       // weatherData.hourly.time: [ "2025-05-01T00:00", ... ]
       // weatherData.hourly.temperature_2m: [ 15.3, ... ]
   

@@ -1,4 +1,4 @@
-/* src/components/charts/Chart.css */
+/* src/components/charts/Chart.css - Updated with ambient temperature styles */
 .chart-container {
   background-color: var(--card-bg);
   border-radius: 0.5rem;
@@ -120,6 +120,12 @@
 
 .chart-action-btn.active {
   background-color: var(--primary);
+  color: white;
+}
+
+/* Ambient temperature toggle specific styles */
+.chart-action-btn.active[title="Toggle Ambient Temperature"] {
+  background-color: var(--warning);
   color: white;
 }
 
@@ -443,6 +449,11 @@
 
 input:checked + .toggle-slider {
   background-color: var(--primary);
+}
+
+input:disabled + .toggle-slider {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 input:checked + .toggle-slider:before {

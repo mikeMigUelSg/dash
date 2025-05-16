@@ -1,12 +1,11 @@
-// src/components/charts/LineChart.jsx
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
-import { Clock, Maximize2, Download, Settings, Sliders, X, Calendar, Search, Filter } from "lucide-react";
+import { Clock, Maximize2, Download, Settings, Sliders, X, Calendar, Search, Filter, Thermometer } from "lucide-react";
 import { useTheme } from "../context/ThemeContext.jsx";
 import "./Chart.css";
 
-const MyLineChart = ({ temps, title = "Temperature History", sensorId, setTemps }) => {
+const MyLineChart = ({ temps, title = "Temperature History", sensorId, setTemps, dateRange, setDateRange }) => {
   const { theme } = useTheme();
   const [timeRange, setTimeRange] = useState("1D");
   const [formattedData, setFormattedData] = useState([]);
@@ -17,12 +16,16 @@ const MyLineChart = ({ temps, title = "Temperature History", sensorId, setTemps 
   const [isMovingAvgSettingsOpen, setIsMovingAvgSettingsOpen] = useState(false);
   const [isCalculatingMA, setIsCalculatingMA] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
-  
-  // New state for chart filter
+  const [filteredAmbientData, setFilteredAmbientData] = useState([]);
+  // State for chart filter
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [isFilterVisible, setIsFilterVisible] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  
+  // State for ambient temperature
+  const [ambientTempData, setAmbientTempData] = useState([]);
+  const [showAmbientTemp, setShowAmbientTemp] = useState(true);
   
   // Set default date range (last 7 days)
   useEffect(() => {
@@ -32,8 +35,21 @@ const MyLineChart = ({ temps, title = "Temperature History", sensorId, setTemps 
     
     setStartDate(start.toISOString().split('T')[0]);
     setEndDate(end.toISOString().split('T')[0]);
+    
+    // Update parent component date range
+    if (setDateRange) {
+      setDateRange({
+        startDate: start.toISOString().split('T')[0],
+        endDate: end.toISOString().split('T')[0]
+      });
+    }
   }, []);
-  
+
+        // Effect to filter data when formattedData, timeRange, or ambientTempData changes
+        useEffect(() => {
+            filterDataByTimeRange();
+        }, [formattedData, timeRange, ambientTempData]);
+        
   // Effect to format data when temps change
   useEffect(() => {
     console.log("Processing temperatures data:", temps);
@@ -72,10 +88,7 @@ const MyLineChart = ({ temps, title = "Temperature History", sensorId, setTemps 
     }
   }, [temps]);
   
-  // Effect to filter data when formattedData or timeRange changes
-  useEffect(() => {
-    filterDataByTimeRange();
-  }, [formattedData, timeRange]);
+
 
   // Effect to calculate moving average when filtered data changes
   useEffect(() => {
@@ -90,6 +103,11 @@ const MyLineChart = ({ temps, title = "Temperature History", sensorId, setTemps 
       setFilteredData([]);
       return;
     }
+
+      // Effect to filter data when formattedData or timeRange changes
+  useEffect(() => {
+    filterDataByTimeRange();
+  }, [formattedData, timeRange]);
     
     const now = new Date().getTime();
     let cutoff;
@@ -114,6 +132,13 @@ const MyLineChart = ({ temps, title = "Temperature History", sensorId, setTemps 
     const filtered = formattedData.filter(item => item.date >= cutoff);
     console.log(`Filtered data for ${timeRange}:`, filtered);
     setFilteredData(filtered);
+    
+    // Also filter ambient temperature data based on the same time range
+// Also filter ambient temperature data based on the same time range
+    if (ambientTempData.length > 0) {
+        const filteredAmbient = ambientTempData.filter(item => item.date >= cutoff);
+        setFilteredAmbientData(filteredAmbient);
+    }
   };
 
   // Calculate moving average
@@ -183,11 +208,22 @@ const MyLineChart = ({ temps, title = "Temperature History", sensorId, setTemps 
     if (!formattedData.length) return;
     
     const csvContent = [
-      "Date,Time,Temperature,MovingAverage", 
+      "Date,Time,Temperature,MovingAverage,AmbientTemperature", 
       ...formattedData.map(item => {
         const date = new Date(item.date);
         const maValue = movingAvgData.find(ma => ma.date === item.date)?.movingAvg || "";
-        return `${date.toLocaleDateString()},${date.toLocaleTimeString()},${item.firstValue},${maValue}`;
+        
+        // Find closest ambient temperature value by timestamp
+        let ambientTemp = "";
+        if (ambientTempData.length > 0) {
+          // Find the closest ambient temperature by timestamp
+          const closest = ambientTempData.reduce((prev, curr) => {
+            return (Math.abs(curr.date - item.date) < Math.abs(prev.date - item.date) ? curr : prev);
+          });
+          ambientTemp = closest ? closest.temperature : "";
+        }
+        
+        return `${date.toLocaleDateString()},${date.toLocaleTimeString()},${item.firstValue},${maValue},${ambientTemp}`;
       })
     ].join("\n");
     
@@ -223,7 +259,7 @@ const MyLineChart = ({ temps, title = "Temperature History", sensorId, setTemps 
     }
   };
   
-  // New handler for fetching data with date filter
+  // Handler for fetching data with date filter
   const handleFetchData = async () => {
     if (!startDate || !endDate) {
       alert("Please select both start and end dates");
@@ -250,6 +286,35 @@ const MyLineChart = ({ temps, title = "Temperature History", sensorId, setTemps 
       } else {
         console.warn(`No valid data for Sensor ${sensorId}`);
         setTemps([]);
+      }
+      
+      // Process ambient temperature data from Porto
+      if (response.data.portoHourly && 
+          Array.isArray(response.data.portoHourly.time) && 
+          Array.isArray(response.data.portoHourly.temperature)) {
+        
+        // Convert the hourly data to the same format as our temperature data
+        const ambientData = response.data.portoHourly.time.map((timeString, index) => {
+          const timestamp = new Date(timeString).getTime();
+          return {
+            date: timestamp,
+            temperature: response.data.portoHourly.temperature[index]
+          };
+        });
+        
+        console.log("Setting ambient temperature data:", ambientData);
+        setAmbientTempData(ambientData);
+      } else {
+        console.warn("No valid ambient temperature data");
+        setAmbientTempData([]);
+      }
+      
+      // Update parent date range if provided
+      if (setDateRange) {
+        setDateRange({
+          startDate,
+          endDate
+        });
       }
       
       // Hide filter after successful fetch
@@ -330,6 +395,14 @@ const MyLineChart = ({ temps, title = "Temperature History", sensorId, setTemps 
               >
                 <Sliders size={16} />
               </button>
+            
+                <button 
+                className={`chart-action-btn ${showAmbientTemp ? "active" : ""}`} 
+                title="Toggle Ambient Temperature"
+                onClick={() => setShowAmbientTemp(!showAmbientTemp)}
+                >
+                <Thermometer size={16} />
+                </button>
               <button 
                 className="chart-action-btn" 
                 title="Expand chart"
@@ -344,6 +417,14 @@ const MyLineChart = ({ temps, title = "Temperature History", sensorId, setTemps 
                 disabled={!formattedData.length}
               >
                 <Download size={16} />
+              </button>
+              {/* Toggle for ambient temperature */}
+              <button 
+                className={`chart-action-btn ${showAmbientTemp ? "active" : ""}`} 
+                title="Toggle Ambient Temperature"
+                onClick={() => setShowAmbientTemp(!showAmbientTemp)}
+              >
+                <Thermometer size={16} />
               </button>
             </div>
           </div>
@@ -506,6 +587,17 @@ const MyLineChart = ({ temps, title = "Temperature History", sensorId, setTemps 
                       minute: "2-digit"
                     })}`;
                   }}
+                  formatter={(value, name) => {
+                    // Format based on which line is being displayed
+                    if (name === "Temperature") {
+                      return [`${value.toFixed(2)}°C`, name];
+                    } else if (name === "Ambient Temp") {
+                      return [`${value.toFixed(2)}°C`, name];
+                    } else if (name.includes("Moving Avg")) {
+                      return [`${value.toFixed(2)}°C`, name];
+                    }
+                    return [value, name];
+                  }}
                 />
                 <Line 
                   type="monotone" 
@@ -517,6 +609,19 @@ const MyLineChart = ({ temps, title = "Temperature History", sensorId, setTemps 
                   dot={{ r: 2 }}
                   strokeWidth={2}
                 />
+                {/* Ambient temperature line */}
+                {showAmbientTemp && filteredAmbientData.length > 0 && (
+                    <Line 
+                        type="monotone" 
+                        dataKey="temperature" 
+                        data={filteredAmbientData}
+                        name="Ambient Temp"
+                        stroke="#f59e0b" // Using warning color
+                        strokeWidth={2}
+                        dot={false}
+                        connectNulls={true}
+                    />
+                    )}
                 {showMovingAvg && movingAvgData.length > 0 && (
                   <Line 
                     type="monotone" 
@@ -601,6 +706,14 @@ const MyLineChart = ({ temps, title = "Temperature History", sensorId, setTemps 
                   disabled={!formattedData.length}
                 >
                   <Download size={16} />
+                </button>
+                {/* Toggle for ambient temperature in expanded view */}
+                <button 
+                  className={`chart-action-btn ${showAmbientTemp ? "active" : ""}`} 
+                  title="Toggle Ambient Temperature"
+                  onClick={() => setShowAmbientTemp(!showAmbientTemp)}
+                >
+                  <Thermometer size={16} />
                 </button>
               </div>
             </div>
@@ -764,6 +877,17 @@ const MyLineChart = ({ temps, title = "Temperature History", sensorId, setTemps 
                         minute: "2-digit"
                       })}`;
                     }}
+                    formatter={(value, name) => {
+                      // Format based on which line is being displayed
+                      if (name === "Temperature") {
+                        return [`${value.toFixed(2)}°C`, name];
+                      } else if (name === "Ambient Temp") {
+                        return [`${value.toFixed(2)}°C`, name];
+                      } else if (name.includes("Moving Avg")) {
+                        return [`${value.toFixed(2)}°C`, name];
+                      }
+                      return [value, name];
+                    }}
                   />
                   <Line 
                     type="monotone" 
@@ -775,6 +899,19 @@ const MyLineChart = ({ temps, title = "Temperature History", sensorId, setTemps 
                     dot={{ r: 3 }}
                     strokeWidth={3}
                   />
+                  {/* Ambient temperature line for expanded view */}
+                  {showAmbientTemp && ambientTempData.length > 0 && (
+                    <Line 
+                      type="monotone" 
+                      dataKey="temperature" 
+                      data={ambientTempData}
+                      name="Ambient Temp"
+                      stroke="#f59e0b" // Using warning color
+                      strokeWidth={3}
+                      dot={{ r: 2 }}
+                      connectNulls={true}
+                    />
+                  )}
                   {showMovingAvg && movingAvgData.length > 0 && (
                     <Line 
                       type="monotone" 
@@ -788,6 +925,7 @@ const MyLineChart = ({ temps, title = "Temperature History", sensorId, setTemps 
                     />
                   )}
                   <Legend />
+                  
                 </LineChart>
               </ResponsiveContainer>
             )}
@@ -798,4 +936,4 @@ const MyLineChart = ({ temps, title = "Temperature History", sensorId, setTemps 
   );
 };
 
-export default MyLineChart;
+export default MyLineChart; 
