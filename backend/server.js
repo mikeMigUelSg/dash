@@ -266,88 +266,87 @@ app.get("/api/temp2", async (req, res) => {
   // TEMP HISTs ----------------------------
   app.get("/api/histTemp1", async (req, res) => {
     console.log("---Endpoint /api/value chamado por:", req.headers.referer || "Desconhecido");
+  
+    // Parse query dates
     const startDate = new Date(req.query.beg);
-    const endDate = new Date(req.query.end);
-    
+    const endDate   = new Date(req.query.end);
+    console.log("Range:", startDate, "→", endDate);
+  
+    // Prepare arrays for your Mongo results
+    const results  = [];
+    const results2 = [];
+  
     try {
-      const results = [];
-      const results2 = []
-
-      console.log(startDate);
-      console.log(endDate);
-
-      // Loop through each day in the range
+      // 1) Fetch Mongo data per day
       for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
-        const GaugeModel = mongoose.model("GaugeModel", GaugeSchema, "raw_".concat(d.getDate().toString(), "_", (d.getMonth()+1).toString(), "_", (d.getYear()+1900).toString()));
-        const dayStart = new Date(d);
-        dayStart.setHours(0, 0, 0, 0); // Start of the day
-        
-        const dayEnd = new Date(d);
-        dayEnd.setHours(23, 59, 59, 999); // End of the day
-        console.log(d)
-        const dailyResult = await GaugeModel.aggregate([
-          {
-            $match: {
-              date: { 
-                $gte: dayStart.getTime(),
-                $lte: dayEnd.getTime()
-              },
-              id: "1",             
-              value: { $lt: 100 }   
-            }
-          },
-          {
-            $bucketAuto: {
-              groupBy: "$date", // Group by date
-              buckets: 100, // Divide into 100 buckets
-              output: {
-                avgValue: { $avg: "$value" }, // Podera ser utilizado dependendo da config 
-                firstValue: { $first: "$value" }, // First value
-                date: { $first: "$date" } 
-              }
-            }
-          },
-          { $sort: { date: 1 } } 
-        ]);
-    
-        // Append daily results to the final array
-        results.push(...dailyResult);
-
-        const dailyResult2 = await GaugeModel.aggregate([
-          {
-            $match: {
-              date: { 
-                $gte: dayStart.getTime(),
-                $lte: dayEnd.getTime()
-              },
-              id: "2",             
-              value: { $lt: 100 }   
-            }
-          },
-          {
-            $bucketAuto: {
-              groupBy: "$date", // Group by date
-              buckets: 100, // Divide into 100 buckets
-              output: {
-                avgValue: { $avg: "$value" }, // Podera ser utilizado dependendo da config 
-                firstValue: { $first: "$value" }, // First value
-                date: { $first: "$date" } 
-              }
-            }
-          },
-      
-          { $sort: { date: 1 } } 
-        ]);
-    
-        results2.push(...dailyResult2);
+        const collectionName = `raw_${d.getDate()}_${d.getMonth()+1}_${d.getFullYear()}`;
+        const GaugeModel     = mongoose.model("GaugeModel", GaugeSchema, collectionName);
+  
+        // Bounds for this day
+        const dayStart = new Date(d); dayStart.setHours(0, 0, 0, 0);
+        const dayEnd   = new Date(d); dayEnd.setHours(23,59,59,999);
+  
+        // Helper to run one aggregation
+        const runAgg = async (id) => {
+          return GaugeModel.aggregate([
+            { $match: {
+                date: { $gte: dayStart.getTime(), $lte: dayEnd.getTime() },
+                id,
+                value: { $lt: 100 }
+            }},
+            { $bucketAuto: {
+                groupBy: "$date",
+                buckets: 100,
+                output: {
+                  avgValue:  { $avg: "$value" },
+                  firstValue:{ $first: "$value" },
+                  date:       { $first: "$date" }
+                }
+            }},
+            { $sort: { date: 1 } }
+          ]);
+        };
+  
+        // Get data for id="1" and id="2"
+        results.push(...await runAgg("1"));
+        results2.push(...await runAgg("2"));
       }
-     
-      res.json({ value: results , value2: results2});
-    
+  
+      // 2) Fetch historical hourly temperature for Porto
+      // Format YYYY-MM-DD
+      const fmt = (d) => d.toISOString().slice(0,10);
+      const portoLat = 41.1579;
+      const portoLon = -8.6291;
+      const weatherUrl = `https://archive-api.open-meteo.com/v1/archive`
+        + `?latitude=${portoLat}`
+        + `&longitude=${portoLon}`
+        + `&start_date=${fmt(startDate)}`
+        + `&end_date=${fmt(endDate)}`
+        + `&hourly=temperature_2m`;
+  
+      console.log("Fetching Porto weather:", weatherUrl);
+      const weatherRes = await fetch(weatherUrl);
+      if (!weatherRes.ok) {
+        throw new Error(`Open-Meteo API error: ${weatherRes.status} ${weatherRes.statusText}`);
+      }
+      const weatherData = await weatherRes.json();
+      // weatherData.hourly.time: [ "2025-05-01T00:00", ... ]
+      // weatherData.hourly.temperature_2m: [ 15.3, ... ]
+  
+      // 3) Send combined JSON
+      res.json({
+        value:  results,
+        value2: results2,
+        portoHourly: {
+          time:        weatherData.hourly.time,
+          temperature: weatherData.hourly.temperature_2m
+        }
+      });
+  
     } catch (error) {
-      console.error("Erro na agregação:", error);
+      console.error("Erro na agregação ou fetch:", error);
+      res.status(500).json({ error: error.message });
     }
-    
   });
 
 // liveCam ----------------------------
