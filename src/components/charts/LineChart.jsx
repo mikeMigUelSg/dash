@@ -68,8 +68,12 @@ const MyLineChart = ({ temps, title = "Temperature History", sensorId, setTemps,
           return null;
         }
         
-        const timestamp = typeof temp.date === 'number' ? temp.date : new Date(temp.date).getTime();
-        
+        // 1. Normalise every numeric timestamp to milliseconds
+      const timestampRaw = Number(temp.date);
+      const timestamp = timestampRaw < 1e12      // 10 digits → seconds
+            ? timestampRaw * 1000                // convert to ms
+            : timestampRaw;          
+              
         return {
           ...temp,
           date: timestamp,
@@ -96,7 +100,12 @@ const MyLineChart = ({ temps, title = "Temperature History", sensorId, setTemps,
       calculateMovingAverage();
     }
   }, [filteredData, windowSize, showMovingAvg]);
-  
+
+  useEffect(() => {
+    filterDataByTimeRange();
+  }, [formattedData, timeRange]);
+    
+
   // Filter data based on selected time range
   const filterDataByTimeRange = () => {
     if (!formattedData.length) {
@@ -105,10 +114,7 @@ const MyLineChart = ({ temps, title = "Temperature History", sensorId, setTemps,
     }
 
       // Effect to filter data when formattedData or timeRange changes
-  useEffect(() => {
-    filterDataByTimeRange();
-  }, [formattedData, timeRange]);
-    
+
     const now = new Date().getTime();
     let cutoff;
     
@@ -396,13 +402,7 @@ const MyLineChart = ({ temps, title = "Temperature History", sensorId, setTemps,
                 <Sliders size={16} />
               </button>
             
-                <button 
-                className={`chart-action-btn ${showAmbientTemp ? "active" : ""}`} 
-                title="Toggle Ambient Temperature"
-                onClick={() => setShowAmbientTemp(!showAmbientTemp)}
-                >
-                <Thermometer size={16} />
-                </button>
+       
               <button 
                 className="chart-action-btn" 
                 title="Expand chart"
